@@ -41,12 +41,10 @@ class Stereo:
                                                     VERSION + "\n\n2026\n\nAuthors: " + AUTHORS))
         menubar.add_cascade(label="Help", menu=help_menu)
 
-        # Konfigurácia okna, aby zobrazilo toto menu
+        # Configuration of window to draw this menu
         self.root.config(menu=menubar)
 
     def file_quit(self, event=None):
-        #a = messagebox.askquestion("Question", "Are you sure to quit?")
-        #if a == 'yes':
         self.root.destroy()
 
 
