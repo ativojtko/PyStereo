@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox, filedialog
 
 AUTHORS = "Hanka Balažovjechová, Rastislav Vojtko"
 
-VERSION = "0.7"
+VERSION = "0.8.0"
 
 class Stereo:
     def __init__(self, root):
@@ -70,7 +70,7 @@ class Stereo:
     
     def _vytvor_tabulku(self, parent):
         """Vloží Treeview do určeného rodičovského prvku."""
-        columns = ('dataset', 'dipdir', 'dip', 'comments')
+        columns = ('dataset', 'type' , 'dipdir', 'dip', 'comments')
         
         # Frame pre Treeview a Scrollbar v rámci ľavého panela
         table_container = tk.Frame(parent)
@@ -83,11 +83,13 @@ class Stereo:
 
         # Nastavenie stĺpcov
         self.tree.heading('dataset', text='Dataset')
+        self.tree.heading('type', text='Type')
         self.tree.heading('dipdir', text='DipDir')
         self.tree.heading('dip', text='Dip')
-        self.tree.heading('comments', text='Comments')
+        self.tree.heading('comments', text='Comments', anchor='w')
 
         self.tree.column('dataset', width=50, minwidth=50, stretch=tk.NO, anchor='center')
+        self.tree.column('type', width=50, minwidth=50, stretch=tk.NO, anchor='center')
         self.tree.column('dipdir', width=50, minwidth=50, stretch=tk.NO, anchor='center')
         self.tree.column('dip', width=50, minwidth=50, stretch=tk.NO, anchor='center')
         self.tree.column('comments', width=150, minwidth=100, stretch=tk.YES, anchor='w')
