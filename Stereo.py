@@ -29,7 +29,7 @@ class Stereo:
         file_menu.add_command(label="Open dataset...") 
 
         file_menu.add_separator()
-        file_menu.add_command(label="Quit")  # Ukončí aplikáciu
+        file_menu.add_command(label="Quit", command=self.file_quit)  # Ukončí aplikáciu
         
         # Pridanie položky "File" do hlavnej lišty
         menubar.add_cascade(label="File", menu=file_menu)
@@ -43,6 +43,11 @@ class Stereo:
 
         # Konfigurácia okna, aby zobrazilo toto menu
         self.root.config(menu=menubar)
+
+    def file_quit(self, event=None):
+        #a = messagebox.askquestion("Question", "Are you sure to quit?")
+        #if a == 'yes':
+        self.root.destroy()
 
 
 if __name__ == "__main__":
