@@ -1,12 +1,15 @@
 import matplotlib.pyplot as plt
 import mplstereonet
+from plots import LineationPlot, PlanePlot, ContourPlot, LineationSettings
 
 
 class StereonetProjection:
-    def __init__(self, ax, canvas, data):
+    def __init__(self, ax, canvas, data, lineation_settings, plane_settings):
         self.ax = ax
         self.canvas = canvas
         self.data = data
+        self.lineation_settings = lineation_settings
+        self.plane_settings = plane_settings
         self.plots = []     # uloženie (obj, údaje)
         self.annot = None   # aktuálny textový label
         self.highlight = None  # zvýraznený objekt
@@ -20,17 +23,23 @@ class StereonetProjection:
         self.plots = []
         self.ax.cla()
 
+        if mode == "contours":
+            contour_plot = ContourPlot(self.ax, self.data)
+            contour_plot.draw()
+
+            self.ax.grid()
+            self.canvas.draw_idle()
+            return
+
         legend_labels = {"S": False, "L": False}
 
         for i in self.data:
-
             typ = i["type"]
-
             # FILTER LOGIKA
             if mode == "lineations" and typ != "L":
                 continue
 
-            if mode == "surfaces" and typ != "S":
+            if mode == "planes" and typ != "S":
                 continue
 
             dataset = i["id"]
@@ -38,31 +47,20 @@ class StereonetProjection:
             dip = i["dip"]
             comment = i["comment"]
 
-            if typ == "S":
-                strike = (azimuth - 90) % 360
-                obj, = self.ax.plane(
-                    strike, dip,
-                    'g',
-                    linewidth=1,
-                    picker=3,
-                    label='Surfaces' if not legend_labels["S"] else ""
-                )
-                legend_labels["S"] = True
-
-            elif typ == "L":
-                obj, = self.ax.line(
-                    dip, azimuth,
-                    'bo',
-                    markersize=6,
-                    picker=6,
-                    label='Lineations' if not legend_labels["L"] else ""
-                )
+            if typ == "L":
+                lineation_plot = LineationPlot(self.ax, settings=self.lineation_settings)
+                obj = lineation_plot.draw(i, legend=not legend_labels["L"])
                 legend_labels["L"] = True
+
+            elif typ == "S":
+                plane_plot = PlanePlot(self.ax, settings=self.plane_settings)
+                obj = plane_plot.draw(i, legend=not legend_labels["S"])
+                legend_labels["S"] = True
 
             self.plots.append((
                 obj,
                 typ,
-                f"{typ} č.{dataset} | azimuth={azimuth}, dip={dip} | {comment}"
+                f"{typ}{dataset}={azimuth}/{dip}°"
             ))
 
         self.ax.grid()
@@ -90,6 +88,7 @@ class StereonetProjection:
             elif typ == "S":
                 obj.set_linewidth(2)
                 obj.set_color('g')
+                obj.set_linewidth(1)
             self.highlight = None
 
         if self.annot:
@@ -144,4 +143,7 @@ class StereonetProjection:
 
 
 if __name__ == "__main__":
-    print("This is a projection module. Run stereo.py to test.")   
+    print("This is a projection module. Run stereo.py to test.")
+
+
+# End of projection.py: (c) 2026 RVOJTKO

@@ -5,17 +5,19 @@ from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import mplstereonet
+from plots.lineation import LineationSettings
+from plots.plane import PlaneSettings
 from projection import StereonetProjection
 
-VERSION = "0.13.0"
-AUTHOR = ("Hanka Balažovjechová", \
-          "Rastislav Vojtko", \
-            "Zuzana Lahová")
+__VERSION__ = "0.16.0"
+__AUTHOR__ = ("Rastislav Vojtko", \
+              "Hana Balažovjechová", \
+              "Zuzana Lahová")
 
 class StereoApp:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"Stereo {VERSION}")
+        self.root.title(f"Stereo {__VERSION__}")
         self.root.geometry("1000x600+100+100")
 
         # Nastavenie ikony aplikáce (Windows vs. ostatné platformy)
@@ -30,6 +32,9 @@ class StereoApp:
                 self.root.iconphoto(True, self.icon)
             except Exception:
                 pass
+        
+        self.lineation_settings = LineationSettings()
+        self.plane_settings = PlaneSettings()
 
         self.data = []
         self.data_loaded = False
@@ -47,6 +52,7 @@ class StereoApp:
         self.status_var = tk.StringVar()
         self.status_var.set(" No file loaded")
 
+        # Status bar configuration
         self.status_bar = tk.Label(
             self.root,
             textvariable=self.status_var,
@@ -54,9 +60,9 @@ class StereoApp:
             relief=tk.SUNKEN,
             anchor="w"
         )
-
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
+        # Create data panel and plot panel
         self.data_panel = DataPanel(self.container, self)
         self.data_panel.grid(row=0, column=0, sticky="nsew")
 
@@ -65,6 +71,8 @@ class StereoApp:
 
 
     def _create_menu(self):
+        """Creates the menu bar with File, Plot and Help menus, 
+        and their respective options."""
         menubar = tk.Menu(self.root)
 
         # File menu with Open, Close and Exit options
@@ -75,6 +83,7 @@ class StereoApp:
         file_menu.add_command(label="Export Plot...",
                                 command=self.export_plot
                                 )
+        file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.destroy)
         menubar.add_cascade(label="File", menu=file_menu)
 
@@ -86,7 +95,13 @@ class StereoApp:
         plot_menu.add_command(label="Great circles",
                               command=self.plot_great_circles
                         )
+        plot_menu.add_command(label="Combined Plot",
+                              command=self.plot_combined
+                )
         plot_menu.add_separator()
+        plot_menu.add_command(label="Contour Plot",
+                              command=self.plot_contours
+                )
         plot_menu.add_command(label="Clear stereogram",
                               command=self.plot_clear_stereogram
                         )
@@ -95,7 +110,9 @@ class StereoApp:
         # Help menu with About option
         help_menu = tk.Menu(menubar, tearoff=0)
         help_menu.add_command(label="About...", 
-                              command=lambda: messagebox.showinfo("About...", "Stereo " + VERSION + "\n\n2026\n\nAutori:\n" + "\n".join(AUTHOR)))
+                              command=lambda: messagebox.showinfo("About...", 
+                                    "Stereo " + __VERSION__ + "\n\n2026\n\nAutori:\n" 
+                                    + "\n".join(__AUTHOR__)))
         menubar.add_cascade(label="Help", menu=help_menu)
 
         # Configuration of the window to display this menu
@@ -166,8 +183,7 @@ class StereoApp:
                     except ValueError:
                         continue
         
-            print(f"Data načítané z {file_path}: {data}")
-
+            #print(f"Data načítané z {file_path}: {data}")
             return data
 
         except Exception as e:
@@ -223,7 +239,7 @@ class StereoApp:
 
             metadata = self.plot_panel.fig.text(
                 0.98, 0.02,
-                f"Stereo {VERSION}\n"
+                f"Stereo {__VERSION__}\n"
                 f"{self.current_file}\n"
                 f"n = {len(self.data)}\n",
                 ha="right",
@@ -265,16 +281,31 @@ class StereoApp:
             messagebox.showwarning("No data", "Load data first.")
             return
         
-        self.plot_panel.redraw(self.data, mode="surfaces")
+        self.plot_panel.redraw(self.data, mode="planes")
+
+    def plot_combined(self):
+        if not self.data:
+            messagebox.showwarning("No data", "Load data first.")
+            return
+
+        self.plot_panel.redraw(self.data, mode="all")
 
     def plot_clear_stereogram(self):
         self.plot_panel.clear()
+
+    def plot_contours(self):
+        if not self.data:
+            messagebox.showwarning("No data", "Load data first.")
+            return
+
+        self.plot_panel.redraw(self.data, mode="contours")
 
 
 class DataPanel(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
+
 
         columns = ("id", "type", "azimuth", "dip", "comment")
 
@@ -380,10 +411,18 @@ class PlotPanel(tk.Frame):
 
     def redraw(self, data, mode="all"):
         if self.projection is None:
-            self.projection = StereonetProjection(self.ax, self.canvas, data)
+            self.projection = StereonetProjection(
+                self.ax, 
+                self.canvas, 
+                data, 
+                self.app.lineation_settings,
+                self.app.plane_settings
+                )
         else:
             self.projection.data = data
             self.projection.plots.clear()
+            self.projection.lineation_settings = self.app.lineation_settings
+            self.projection.plane_settings = self.app.plane_settings
 
         self.ax.cla()
 
@@ -416,6 +455,7 @@ class PlotPanel(tk.Frame):
             fontsize=14
         )
 
+
     def highlight(self, index):
         pass
 
@@ -425,3 +465,5 @@ if __name__ == "__main__":
     app = StereoApp(root)
     root.mainloop()
     
+
+# End of stereo.py: (c) 2026 RVOJTKO
