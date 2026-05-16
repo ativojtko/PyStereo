@@ -1,16 +1,28 @@
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
-AUTHORS = "Hanka Balažovjechová, Rastislav Vojtko"
-
-VERSION = "0.8.0"
+AUTHORS = "Hanka Balažovjechová, Rastislav Vojtko, Zuzana Lahová"
+VERSION = "0.9.0"
 
 class Stereo:
     def __init__(self, root):
         self.root = root
         self.root.title(f"Stereo {VERSION}")
-        self.root.iconbitmap("stereo.ico")
         self.root.geometry("1000x600+200+200")
+
+        # Nastavenie ikony aplikáce (Windows vs. ostatné platformy)
+        if sys.platform.startswith("win"):
+            try:
+                root.iconbitmap("stereo.ico")
+            except Exception:
+                pass
+        else:
+            try:
+                icon = tk.PhotoImage(file="stereo.png")
+                root.iconphoto(True, icon)
+            except Exception:
+                pass
 
         self.data = []
 
@@ -118,7 +130,7 @@ class Stereo:
 
 
     def read_data(self, file_path):
-        """Načítá data ze zvoleného souboru a vrátí je jako seznam."""
+        """Načíta data zo zvoleného súboru a vrátí jich ako zoznam."""
         vysledok = []
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -129,7 +141,7 @@ class Stereo:
             print(f"Data načítané z {file_path}: {vysledok}")
             return vysledok
         except Exception as e:
-            messagebox.showerror("Chyba", f"Nepodarilo sa prečítať súbor:\n{e}")
+            messagebox.showerror("Error", f"Nepodarilo sa prečítať súbor:\n{e}")
             return None
 
     def obnov_tabulku(self):
@@ -137,7 +149,7 @@ class Stereo:
         for i in self.tree.get_children():
             self.tree.delete(i)
         for riadok in self.data:
-            self.tree.insert('', tk.END, values=riadok)
+            self.tree.insert('', tk.END, values=riadok[:5])  # Zobrazí len prvých 5 stĺpcov
 
     def file_quit(self, event=None):
         a = messagebox.askquestion("Question", "Are you sure to quit?")
