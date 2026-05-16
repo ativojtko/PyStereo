@@ -4,8 +4,9 @@ from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import mplstereonet
+from projection import StereonetProjection
 
-VERSION = "0.10.0"
+VERSION = "0.11.0"
 AUTHOR = ("Hanka Balažovjechová", "Rastislav Vojtko", "Zuzana Lahová")
 
 class StereoApp:
@@ -28,6 +29,7 @@ class StereoApp:
                 pass
 
         self.data = []
+        self.data_loaded = False
 
         self._create_menu()
 
@@ -50,10 +52,17 @@ class StereoApp:
 
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Open", command=self.load_file)
+        file_menu.add_command(label="Close", command=self.close_data)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.destroy)
 
         menubar.add_cascade(label="File", menu=file_menu)
+
+        plot_menu = tk.Menu(menubar, tearoff=0)
+        plot_menu.add_command(label="Lineations",
+                              command=self.plot_lineations
+                        )
+        menubar.add_cascade(label="Plot", menu=plot_menu)
 
         # Pridanie položky "Pomoc" (voliteľné)
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -118,10 +127,29 @@ class StereoApp:
     def set_data(self, data):
         self.data = data
         self.data_panel.refresh(data)
-        self.plot_panel.redraw(data)
+        #self.plot_panel.redraw(data)
+        self.data_loaded = True
 
     def dataset_selected(self, index):
         self.plot_panel.highlight(index)
+
+    def close_data(self):
+        if self.data:
+            if not messagebox.askyesno("Close", "Odstrániť aktuálne dáta?"):
+                return
+            
+        self.data = []
+        self.data_loaded = False
+
+        self.data_panel.refresh([])
+        self.plot_panel.clear()
+
+    def plot_lineations(self):
+        if not self.data:
+            messagebox.showwarning("No data", "Najprv načítaj dáta.")
+            return
+        
+        self.plot_panel.redraw(self.data, mode="lineations")
 
 
 class DataPanel(tk.Frame):
@@ -206,7 +234,7 @@ class PlotPanel(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg="white")
         self.app = app
-
+        
         self.fig = plt.Figure(figsize=(5,5))
         self.ax = self.fig.add_subplot(111, projection="stereonet")
         self.ax.grid(True)
@@ -214,10 +242,29 @@ class PlotPanel(tk.Frame):
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
+        self.projection = None
         self.canvas.draw()
 
-    def redraw(self, data):
-        pass
+    def redraw(self, data, mode="all"):
+        if self.projection is None:
+            self.projection = StereonetProjection(self.ax, self.canvas, data)
+        else:
+            self.projection.data = data
+            self.projection.plots.clear()   # DÔLEŽITÉ
+
+        self.ax.cla()
+        self.ax = self.fig.add_subplot(111, projection="stereonet")
+
+        self.projection.ax = self.ax
+        self.projection.draw(mode="lineations")
+
+        self.canvas.draw_idle()
+    
+    def clear(self):
+        self.ax.cla()
+        self.ax.grid(True)
+        self.canvas.draw_idle()
+
 
     def highlight(self, index):
         pass
