@@ -32,7 +32,7 @@ class StereonetProjection:
             if mode == "lineations" and typ != "L":
                 continue
 
-            if mode == "planes" and typ != "S":
+            if mode == "surfaces" and typ != "S":
                 continue
 
             dataset = i["id"]
@@ -45,9 +45,9 @@ class StereonetProjection:
                 obj, = self.ax.plane(
                     strike, dip,
                     'g',
-                    linewidth=2,
+                    linewidth=1,
                     picker=3,
-                    label='Plocha' if not legend_labels["S"] else ""
+                    label='Surfaces' if not legend_labels["S"] else ""
                 )
                 legend_labels["S"] = True
 
@@ -57,26 +57,30 @@ class StereonetProjection:
                     'bo',
                     markersize=6,
                     picker=6,
-                    label='Lineácia' if not legend_labels["L"] else ""
+                    label='Lineations' if not legend_labels["L"] else ""
                 )
                 legend_labels["L"] = True
 
             self.plots.append((
                 obj,
                 typ,
-                f"{typ} č.{dataset} | azimuth={azimuth}, dip={dip}"
+                f"{typ} č.{dataset} | azimuth={azimuth}, dip={dip} | {comment}"
             ))
 
         self.ax.grid()
 
-        self.ax.legend(
-            loc='lower left',
-            bbox_to_anchor=(0.0, 0.0),
-            frameon=False,
-            fontsize=9
-        )
+        handles, labels = self.ax.get_legend_handles_labels()
+
+        if handles:
+            self.ax.legend(
+                loc='lower left',
+                bbox_to_anchor=(0.0, 0.0),
+                frameon=False,
+                fontsize=9
+            )
 
         self.canvas.draw_idle()
+
 
     def reset_highlight(self):
         #metóda na odznačenie objektu
@@ -86,7 +90,7 @@ class StereonetProjection:
                 obj.set_marker('o')
                 obj.set_color('b')
                 obj.set_markersize(6)
-            elif typ == "P":
+            elif typ == "S":
                 obj.set_linewidth(2)
                 obj.set_color('g')
             self.highlight = None
@@ -95,9 +99,12 @@ class StereonetProjection:
             self.annot.remove()
             self.annot = None
 
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def on_click_outside(self, event):
+        if event.inaxes != self.ax:
+            self.reset_highlight()
+            return
 
         # Skontroluj, či kliknutie nie je na existujúci objekt
         for obj, _, _ in self.plots:
@@ -136,20 +143,8 @@ class StereonetProjection:
                                               bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='black'))
                 break
 
-        self.fig.canvas.draw()
-        
+        self.canvas.draw_idle()
 
-    def show(self):
-        plt.show()
 
 if __name__ == "__main__":
-    # Testovacie dáta
-    hodnoty = [[1, 'L', 90, 60, "heude"],
-                [2, 'P', 180, 30, 'bbb'],
-           [3, 'L', 270, 15, 'ccc'],
-           [3, 'P', 270, 15, 'ccc'],
-           [4, 'P', 315, 45, 'ddd']]
-
-    plotter = StereonetProjection(hodnoty)
-    plotter.draw()
-    plotter.show()
+    print("Toto je modul projekcie. Spusťte stereo.py pre testovanie.")   

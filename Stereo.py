@@ -6,7 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import mplstereonet
 from projection import StereonetProjection
 
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 AUTHOR = ("Hanka Balažovjechová", "Rastislav Vojtko", "Zuzana Lahová")
 
 class StereoApp:
@@ -62,6 +62,9 @@ class StereoApp:
         plot_menu.add_command(label="Lineations",
                               command=self.plot_lineations
                         )
+        plot_menu.add_command(label="Great circles",
+                              command=self.plot_great_circles
+                        )
         menubar.add_cascade(label="Plot", menu=plot_menu)
 
         # Pridanie položky "Pomoc" (voliteľné)
@@ -77,6 +80,16 @@ class StereoApp:
         #self._build_ui()
 
     def load_file(self):
+        if self.data:
+            answer = messagebox.askyesno(
+                "Replace dataset",
+                "A dataset is already loaded.\n\nReplace it with a new one?"
+            )
+
+            if not answer:
+                return
+
+
         path = filedialog.askopenfilename(
             title="Vyberte textový súbor s dátami",
             filetypes=(("Normal text file", "*.txt"), \
@@ -127,7 +140,6 @@ class StereoApp:
     def set_data(self, data):
         self.data = data
         self.data_panel.refresh(data)
-        #self.plot_panel.redraw(data)
         self.data_loaded = True
 
     def dataset_selected(self, index):
@@ -150,6 +162,13 @@ class StereoApp:
             return
         
         self.plot_panel.redraw(self.data, mode="lineations")
+
+    def plot_great_circles(self):
+        if not self.data:
+            messagebox.showwarning("No data", "Najprv načítaj dáta.")
+            return
+        
+        self.plot_panel.redraw(self.data, mode="surfaces")
 
 
 class DataPanel(tk.Frame):
@@ -237,7 +256,13 @@ class PlotPanel(tk.Frame):
         
         self.fig = plt.Figure(figsize=(5,5))
         self.ax = self.fig.add_subplot(111, projection="stereonet")
-        self.ax.grid(True)
+        self.ax.grid(False)
+        self.ax.text(0.5, 0.5, "+",
+                    transform=self.ax.transAxes,
+                    ha="center",
+                    va="center",
+                    fontsize=14
+                    )
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -245,24 +270,42 @@ class PlotPanel(tk.Frame):
         self.projection = None
         self.canvas.draw()
 
+
     def redraw(self, data, mode="all"):
         if self.projection is None:
             self.projection = StereonetProjection(self.ax, self.canvas, data)
         else:
             self.projection.data = data
-            self.projection.plots.clear()   # DÔLEŽITÉ
+            self.projection.plots.clear()
 
         self.ax.cla()
-        self.ax = self.fig.add_subplot(111, projection="stereonet")
 
         self.projection.ax = self.ax
-        self.projection.draw(mode="lineations")
+        self.projection.draw(mode=mode)
 
+        self.ax.grid(False)
+        self.ax.text(0.5, 0.5, "+",
+                    transform=self.ax.transAxes,
+                    ha="center",
+                    va="center",
+                    fontsize=14
+                    )
+
+        self.canvas.draw_idle()
+            
+            
         self.canvas.draw_idle()
     
     def clear(self):
         self.ax.cla()
-        self.ax.grid(True)
+        self.ax.grid(False)
+        self.ax.text(0.5, 0.5, "+",
+                    transform=self.ax.transAxes,
+                    ha="center",
+                    va="center",
+                    fontsize=14
+                    )
+        
         self.canvas.draw_idle()
 
 
