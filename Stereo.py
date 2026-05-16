@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 AUTHORS = "Hana Balažovjechová, Rastislav Vojtko"
-VERSION = "0.2.0"
+VERSION = "0.6.0"
 
 class Stereo:
     def __init__(self, root):
@@ -19,6 +19,7 @@ class Stereo:
         self.data = []
 
         self._create_menu()
+        self._init_gui()
 
     def _create_menu(self):
         """Vytvorí hornú lištu s ponukami."""
@@ -44,6 +45,38 @@ class Stereo:
         # Configuration of window to draw this menu
         self.root.config(menu=menubar)
 
+    def _init_gui(self):
+        """Vytvorenie tabuľky a zvyšku rozhrania."""
+        table_frame = tk.Frame(self.root)
+        table_frame.pack(side=tk.TOP, fill='both', expand=True, padx=10, pady=10)
+
+        columns = ('dataset', 'dipdir', 'dip', 'comments')
+        self.tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+
+        # Nastavenie stĺpcov
+        self.tree.heading('dataset', text='Dataset')
+        self.tree.heading('dipdir', text='DipDir')
+        self.tree.heading('dip', text='Dip')
+        self.tree.heading('comments', text='Comments', anchor='w')
+
+        self.tree.column('dataset', width=80, minwidth=50, stretch=tk.NO, anchor='center')
+        self.tree.column('dipdir', width=80, minwidth=50, stretch=tk.NO, anchor='center')
+        self.tree.column('dip', width=80, minwidth=50, stretch=tk.NO, anchor='center')
+        self.tree.column('comments', width=300, minwidth=100, stretch=tk.YES, anchor='w')
+
+        self.tree.pack(side=tk.LEFT, fill='both', expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+    def obnov_tabulku(self):
+        """Prekreslenie Treeview."""
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+        for riadok in self.data:
+            self.tree.insert('', tk.END, values=riadok)
+            
     def open_read(self):
         """Otvorí dialógové okno na výber súboru a následne ho načíta."""
         fn_path = filedialog.askopenfilename(
