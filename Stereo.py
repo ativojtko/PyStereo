@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 AUTHORS = "Hana Balažovjechová, Rastislav Vojtko"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 class Stereo:
     def __init__(self, root):
@@ -17,6 +17,32 @@ class Stereo:
             pass
 
         self.data = []
+
+        self._create_menu()
+
+    def _create_menu(self):
+        """Vytvorí hornú lištu s ponukami."""
+        menubar = tk.Menu(self.root)
+        
+        # Vytvorenie položky File a jej podmenu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Open dataset...") 
+
+        file_menu.add_separator()
+        file_menu.add_command(label="Quit")  # Ukončí aplikáciu
+        
+        # Pridanie položky "File" do hlavnej lišty
+        menubar.add_cascade(label="File", menu=file_menu)
+        
+        # Pridanie položky "Help" (voliteľné)
+        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(label="About...", 
+                              command=lambda: messagebox.showinfo("About...", "Stereo " + \
+                                                    VERSION + "\n\n2026\n\nAuthors: " + AUTHORS))
+        menubar.add_cascade(label="Help", menu=help_menu)
+
+        # Konfigurácia okna, aby zobrazilo toto menu
+        self.root.config(menu=menubar)
 
 
 if __name__ == "__main__":
