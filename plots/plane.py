@@ -1,5 +1,6 @@
 from dataclasses import dataclass, asdict
 
+
 @dataclass
 class PlaneSettings:
     color: str = "green"      # Farba

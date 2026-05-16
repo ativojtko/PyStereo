@@ -9,10 +9,12 @@ from plots.lineation import LineationSettings
 from plots.plane import PlaneSettings
 from projection import StereonetProjection
 
-__VERSION__ = "0.16.0"
+
+__VERSION__ = "0.17.0"
 __AUTHOR__ = ("Rastislav Vojtko", \
               "Hana Balažovjechová", \
               "Zuzana Lahová")
+
 
 class StereoApp:
     def __init__(self, root):
@@ -106,6 +108,14 @@ class StereoApp:
                               command=self.plot_clear_stereogram
                         )
         menubar.add_cascade(label="Plot", menu=plot_menu)
+
+        # Settings menu with Lineation settings option
+        settings_menu = tk.Menu(menubar, tearoff=0)
+        settings_menu.add_command(
+                            label="Lineations...",
+            command=self.open_lineation_settings
+        )
+        menubar.add_cascade(label="Settings", menu=settings_menu)
 
         # Help menu with About option
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -268,6 +278,7 @@ class StereoApp:
                 str(e)
             )
 
+
 # Plotting methods for lineations and great circles, and clearing the stereogram
     def plot_lineations(self):
         if not self.data:
@@ -276,12 +287,14 @@ class StereoApp:
         
         self.plot_panel.redraw(self.data, mode="lineations")
 
+
     def plot_great_circles(self):
         if not self.data:
             messagebox.showwarning("No data", "Load data first.")
             return
         
         self.plot_panel.redraw(self.data, mode="planes")
+
 
     def plot_combined(self):
         if not self.data:
@@ -290,8 +303,10 @@ class StereoApp:
 
         self.plot_panel.redraw(self.data, mode="all")
 
+
     def plot_clear_stereogram(self):
         self.plot_panel.clear()
+
 
     def plot_contours(self):
         if not self.data:
@@ -299,6 +314,10 @@ class StereoApp:
             return
 
         self.plot_panel.redraw(self.data, mode="contours")
+
+# Settings dialog methods
+    def open_lineation_settings(self):
+        LineationSettingsDialog(self.root, self)
 
 
 class DataPanel(tk.Frame):
@@ -458,6 +477,99 @@ class PlotPanel(tk.Frame):
 
     def highlight(self, index):
         pass
+
+
+class LineationSettingsDialog(tk.Toplevel):
+    def __init__(self, parent, app):
+        super().__init__(parent)
+
+        self.app = app
+        self.title("Lineation Settings")
+        self.geometry("350x450")
+        self.resizable(False, False)
+
+        self.transient(parent)
+        self.grab_set()
+
+        settings = app.lineation_settings
+
+        self.marker_var = tk.StringVar(value=settings.marker)
+        self.size_var = tk.DoubleVar(value=settings.markersize)
+        self.color_var = tk.StringVar(value=settings.color)
+        self.alpha_var = tk.DoubleVar(value=settings.alpha)
+        self.edgecolor_var = tk.StringVar(value=settings.markeredgecolor)
+        self.edgewidth_var = tk.DoubleVar(value=settings.markeredgewidth)
+
+        self._build_ui()
+
+    def _build_ui(self):
+        ttk.Label(self, text="Marker").pack(pady=5)
+        ttk.Combobox(
+            self,
+            textvariable=self.marker_var,
+            values=["o", "^", "s", "x", "d"]
+        ).pack()
+
+        ttk.Label(self, text="Size").pack(pady=5)
+        ttk.Scale(
+            self,
+            from_=2,
+            to=20,
+            variable=self.size_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Label(self, text="Colour").pack(pady=5)
+        ttk.Entry(self, textvariable=self.color_var).pack()
+
+        ttk.Label(self, text="Alpha").pack(pady=5)
+
+        ttk.Scale(
+            self,
+            from_=0.1,
+            to=1.0,
+            variable=self.alpha_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Label(self, text="Edge Colour").pack(pady=5)
+
+        ttk.Entry(
+            self,
+            textvariable=self.edgecolor_var
+        ).pack()
+
+        ttk.Label(self, text="Edge Width").pack(pady=5)
+
+        ttk.Scale(
+            self,
+            from_=0.0,
+            to=5.0,
+            variable=self.edgewidth_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Button(
+            self,
+            text="Apply",
+            command=self.apply
+        ).pack(pady=20) 
+
+
+    def apply(self):
+        settings = self.app.lineation_settings
+
+        settings.marker = self.marker_var.get()
+        settings.markersize = self.size_var.get()
+        settings.color = self.color_var.get()
+        settings.alpha = self.alpha_var.get()
+        settings.markeredgecolor = self.edgecolor_var.get()
+        settings.markeredgewidth = self.edgewidth_var.get()
+
+        if self.app.data:
+            self.app.plot_lineations()
+
+        self.destroy()    
 
 
 if __name__ == "__main__":
