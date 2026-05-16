@@ -7,8 +7,6 @@ class StereonetProjection:
         self.ax = ax
         self.canvas = canvas
         self.data = data
-        #self.fig = plt.figure(figsize=(8, 5))
-
         self.plots = []     # uloženie (obj, údaje)
         self.annot = None   # aktuálny textový label
         self.highlight = None  # zvýraznený objekt
@@ -18,7 +16,7 @@ class StereonetProjection:
 
 
     def draw(self, mode="all"):
-        # vyčisti starý stav
+        # Clear old state
         self.plots = []
         self.ax.cla()
 
@@ -70,7 +68,6 @@ class StereonetProjection:
         self.ax.grid()
 
         handles, labels = self.ax.get_legend_handles_labels()
-
         if handles:
             self.ax.legend(
                 loc='lower left',
@@ -101,6 +98,7 @@ class StereonetProjection:
 
         self.canvas.draw_idle()
 
+
     def on_click_outside(self, event):
         if event.inaxes != self.ax:
             self.reset_highlight()
@@ -117,7 +115,6 @@ class StereonetProjection:
 
 
     def on_pick(self, event):
-
         self.reset_highlight()
         artist = event.artist
         
@@ -147,4 +144,4 @@ class StereonetProjection:
 
 
 if __name__ == "__main__":
-    print("Toto je modul projekcie. Spusťte stereo.py pre testovanie.")   
+    print("This is a projection module. Run stereo.py to test.")   

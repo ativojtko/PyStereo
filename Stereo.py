@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
@@ -6,8 +7,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import mplstereonet
 from projection import StereonetProjection
 
-VERSION = "0.12.0"
-AUTHOR = ("Hanka Balažovjechová", "Rastislav Vojtko", "Zuzana Lahová")
+VERSION = "0.13.0"
+AUTHOR = ("Hanka Balažovjechová", \
+          "Rastislav Vojtko", \
+            "Zuzana Lahová")
 
 class StereoApp:
     def __init__(self, root):
@@ -31,6 +34,7 @@ class StereoApp:
         self.data = []
         self.data_loaded = False
 
+        # Call method _create_menu() 
         self._create_menu()
 
         self.container = tk.Frame(root)
@@ -39,6 +43,19 @@ class StereoApp:
         self.container.columnconfigure(0, weight=1)
         self.container.columnconfigure(1, weight=2)
         self.container.rowconfigure(0, weight=1)
+
+        self.status_var = tk.StringVar()
+        self.status_var.set(" No file loaded")
+
+        self.status_bar = tk.Label(
+            self.root,
+            textvariable=self.status_var,
+            bd=1,
+            relief=tk.SUNKEN,
+            anchor="w"
+        )
+
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self.data_panel = DataPanel(self.container, self)
         self.data_panel.grid(row=0, column=0, sticky="nsew")
@@ -50,14 +67,18 @@ class StereoApp:
     def _create_menu(self):
         menubar = tk.Menu(self.root)
 
+        # File menu with Open, Close and Exit options
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Open", command=self.load_file)
         file_menu.add_command(label="Close", command=self.close_data)
         file_menu.add_separator()
+        file_menu.add_command(label="Export Plot...",
+                                command=self.export_plot
+                                )
         file_menu.add_command(label="Exit", command=self.root.destroy)
-
         menubar.add_cascade(label="File", menu=file_menu)
 
+        # Plot menu with Lineations and Great circles options
         plot_menu = tk.Menu(menubar, tearoff=0)
         plot_menu.add_command(label="Lineations",
                               command=self.plot_lineations
@@ -65,21 +86,30 @@ class StereoApp:
         plot_menu.add_command(label="Great circles",
                               command=self.plot_great_circles
                         )
+        plot_menu.add_separator()
+        plot_menu.add_command(label="Clear stereogram",
+                              command=self.plot_clear_stereogram
+                        )
         menubar.add_cascade(label="Plot", menu=plot_menu)
 
-        # Pridanie položky "Pomoc" (voliteľné)
+        # Help menu with About option
         help_menu = tk.Menu(menubar, tearoff=0)
         help_menu.add_command(label="About...", 
                               command=lambda: messagebox.showinfo("About...", "Stereo " + VERSION + "\n\n2026\n\nAutori:\n" + "\n".join(AUTHOR)))
         menubar.add_cascade(label="Help", menu=help_menu)
 
-        # Konfigurácia okna, aby zobrazilo toto menu
+        # Configuration of the window to display this menu
         self.root.config(menu=menubar)
-        
 
-        #self._build_ui()
 
     def load_file(self):
+        """Opens a file dialog to select a text file containing the 
+        structural dataset. If a dataset is already loaded, prompts 
+        the user to confirm replacing it with a new one.
+        The selected file is read and parsed, and the data is stored 
+        in the app's state. The data table is updated to reflect the 
+        newly loaded dataset.
+        """
         if self.data:
             answer = messagebox.askyesno(
                 "Replace dataset",
@@ -91,16 +121,23 @@ class StereoApp:
 
 
         path = filedialog.askopenfilename(
-            title="Vyberte textový súbor s dátami",
-            filetypes=(("Normal text file", "*.txt"), \
+            title="Select a text file containing data",
+            filetypes=(("Plain text file", "*.txt"), \
+                       ("Tab separated values", "*.tsv"), \
                        ("Comma separated values", "*.csv"), \
                        ("All files", "*.*"))
         )
 
         if not path:
             return
+        
         data = self.read_data(path)
         self.set_data(data)
+
+        filename = Path(path).name
+        self.current_file = Path(path).name # toto treba doriesit
+        self.status_var.set(f" {filename} | {len(data)} records loaded")
+
 
     def read_data(self, file_path):
         data = []
@@ -129,7 +166,7 @@ class StereoApp:
                     except ValueError:
                         continue
         
-            #print(f"Data načítané z {file_path}: {data}")
+            print(f"Data načítané z {file_path}: {data}")
 
             return data
 
@@ -147,7 +184,7 @@ class StereoApp:
 
     def close_data(self):
         if self.data:
-            if not messagebox.askyesno("Close", "Odstrániť aktuálne dáta?"):
+            if not messagebox.askyesno("Close", "Close actual data?"):
                 return
             
         self.data = []
@@ -155,20 +192,83 @@ class StereoApp:
 
         self.data_panel.refresh([])
         self.plot_panel.clear()
+        self.status_var.set(" No file loaded")
 
+
+    def export_plot(self):
+        if not self.plot_panel.has_plots:
+            messagebox.showwarning("No plot",
+                                "Create a stereogram first."
+                    )
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[
+                ("PNG files", "*.png"),
+                ("JPEG files", "*.jpg"),
+                ("PDF files", "*.pdf"),
+                ("SVG files", "*.svg"),
+                ("EPS files", "*.eps"),
+                ("All files", "*.*")
+            ],
+            title="Export stereogram"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            self.plot_panel.canvas.draw()
+
+            metadata = self.plot_panel.fig.text(
+                0.98, 0.02,
+                f"Stereo {VERSION}\n"
+                f"{self.current_file}\n"
+                f"n = {len(self.data)}\n",
+                ha="right",
+                va="bottom",
+                fontsize=8,
+                color="gray"
+            )   
+
+            self.plot_panel.fig.savefig(
+                file_path,
+                dpi=300,
+                bbox_inches="tight",
+                facecolor="white"
+            )
+
+            metadata.remove()
+
+            messagebox.showinfo(
+                "Export",
+                f"Stereogram exported successfully:\n{file_path}"
+            )
+
+        except Exception as e:
+            messagebox.showerror(
+                "Export error",
+                str(e)
+            )
+
+# Plotting methods for lineations and great circles, and clearing the stereogram
     def plot_lineations(self):
         if not self.data:
-            messagebox.showwarning("No data", "Najprv načítaj dáta.")
+            messagebox.showwarning("No data", "Load data first.")
             return
         
         self.plot_panel.redraw(self.data, mode="lineations")
 
     def plot_great_circles(self):
         if not self.data:
-            messagebox.showwarning("No data", "Najprv načítaj dáta.")
+            messagebox.showwarning("No data", "Load data first.")
             return
         
         self.plot_panel.redraw(self.data, mode="surfaces")
+
+    def plot_clear_stereogram(self):
+        self.plot_panel.clear()
 
 
 class DataPanel(tk.Frame):
@@ -231,7 +331,14 @@ class DataPanel(tk.Frame):
         self.scrollbar.grid(row=0, column=1, sticky="ns")
         self.xscrollbar.grid(row=1, column=0, sticky="ew")
 
+
     def refresh(self, data):
+        """
+        Updates the data table with the currently loaded structural dataset.
+
+        Existing rows are cleared before inserting new data to keep
+        the table synchronised with StereoApp.data.
+        """
         for item in self.tree.get_children():
             self.tree.delete(item)
 
@@ -284,30 +391,30 @@ class PlotPanel(tk.Frame):
         self.projection.draw(mode=mode)
 
         self.ax.grid(False)
-        self.ax.text(0.5, 0.5, "+",
-                    transform=self.ax.transAxes,
-                    ha="center",
-                    va="center",
-                    fontsize=14
-                    )
+        self._setup_axes()
 
+        self.has_plots = True
         self.canvas.draw_idle()
-            
-            
-        self.canvas.draw_idle()
+
     
     def clear(self):
         self.ax.cla()
         self.ax.grid(False)
-        self.ax.text(0.5, 0.5, "+",
-                    transform=self.ax.transAxes,
-                    ha="center",
-                    va="center",
-                    fontsize=14
-                    )
-        
-        self.canvas.draw_idle()
+        self._setup_axes()
 
+        self.has_plots = False 
+        self.canvas.draw_idle()
+        
+
+    def _setup_axes(self):
+        self.ax.grid(False)
+        self.ax.text(
+            0.5, 0.5, "+",
+            transform=self.ax.transAxes,
+            ha="center",
+            va="center",
+            fontsize=14
+        )
 
     def highlight(self, index):
         pass
