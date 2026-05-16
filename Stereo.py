@@ -26,7 +26,7 @@ class Stereo:
         
         # Vytvorenie položky File a jej podmenu
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Open dataset...") 
+        file_menu.add_command(label="Open dataset...", command=self.open_read) 
 
         file_menu.add_separator()
         file_menu.add_command(label="Quit", command=self.file_quit)  # Ukončí aplikáciu
@@ -43,6 +43,46 @@ class Stereo:
 
         # Configuration of window to draw this menu
         self.root.config(menu=menubar)
+
+    def open_read(self):
+        """Otvorí dialógové okno na výber súboru a následne ho načíta."""
+        fn_path = filedialog.askopenfilename(
+            title="Vyberte textový súbor s dátami",
+            filetypes=(("Textové súbory", "*.txt"), ("Comma separated values", "*.csv"), ("Všetky súbory", "*.*"))
+        )
+        
+        if fn_path: # Ak používateľ nezrušil výber
+            print(f"Vybraný súbor: {fn_path}")
+            uploaded_data = self.read_data(fn_path)
+            if uploaded_data is not None:
+                self.data = uploaded_data
+                print(f"Načítané dáta: {self.data}")
+                #self.obnov_tabulku()
+
+    def read_data(self, file_path):
+        """Načítá data ze zvoleného souboru a vrátí je jako seznam."""
+        try:
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+                data = []
+                for line in lines:
+                    line = line.strip()
+                    if line:  # Ignoruje prázdné řádky
+                        parts = line.split()
+                        if len(parts) == 2:  # Očekáváme 2 hodnoty (trend a plunge)
+                            try:
+                                trend = float(parts[0])
+                                plunge = float(parts[1])
+                                data.append((trend, plunge))
+                            except ValueError:
+                                print(f"Neplatný formát čísla v řádku: {line}")
+                        else:
+                            print(f"Neplatný formát řádku (očekávány 2 hodnoty): {line}")
+                return data
+        except Exception as e:
+            messagebox.showerror("Chyba", f"Nepodařilo se načíst soubor: {e}")
+            return None
+
 
     def file_quit(self, event=None):
         self.root.destroy()
