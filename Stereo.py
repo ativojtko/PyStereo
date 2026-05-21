@@ -115,6 +115,10 @@ class StereoApp:
                             label="Lineations...",
             command=self.open_lineation_settings
         )
+        settings_menu.add_command(
+                            label="Planes...",
+            command=self.open_plane_settings
+        )
         menubar.add_cascade(label="Settings", menu=settings_menu)
 
         # Help menu with About option
@@ -318,6 +322,9 @@ class StereoApp:
 # Settings dialog methods
     def open_lineation_settings(self):
         LineationSettingsDialog(self.root, self)
+
+    def open_plane_settings(self):
+        PlaneSettingsDialog(self.root, self)
 
 
 class DataPanel(tk.Frame):
@@ -569,7 +576,98 @@ class LineationSettingsDialog(tk.Toplevel):
         if self.app.data:
             self.app.plot_lineations()
 
-        self.destroy()    
+        self.destroy()
+
+class PlaneSettingsDialog(tk.Toplevel):
+    def __init__(self, parent, app):
+        super().__init__(parent)
+
+        self.app = app
+
+        self.title("Plane Settings")
+        self.geometry("350x350")
+        self.resizable(False, False)
+
+        self.transient(parent)
+        self.grab_set()
+
+        settings = app.plane_settings
+
+        self.color_var = tk.StringVar(value=settings.color)
+        self.linewidth_var = tk.DoubleVar(value=settings.linewidth)
+        self.linestyle_var = tk.StringVar(value=settings.linestyle)
+        self.alpha_var = tk.DoubleVar(value=settings.alpha)
+        self.segments_var = tk.IntVar(value=settings.segments)
+
+        self._build_ui()
+
+    def _build_ui(self):
+
+        ttk.Label(self, text="Colour").pack(pady=5)
+
+        ttk.Entry(
+            self,
+            textvariable=self.color_var
+        ).pack()
+
+        ttk.Label(self, text="Line Width").pack(pady=5)
+
+        ttk.Scale(
+            self,
+            from_=0.5,
+            to=5.0,
+            variable=self.linewidth_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Label(self, text="Line Style").pack(pady=5)
+
+        ttk.Combobox(
+            self,
+            textvariable=self.linestyle_var,
+            values=["-", "--", "-.", ":"],
+            state="readonly"
+        ).pack()
+
+        ttk.Label(self, text="Alpha").pack(pady=5)
+
+        ttk.Scale(
+            self,
+            from_=0.1,
+            to=1.0,
+            variable=self.alpha_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Label(self, text="Segments").pack(pady=5)
+
+        ttk.Scale(
+            self,
+            from_=10,
+            to=200,
+            variable=self.segments_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Button(
+            self,
+            text="Apply",
+            command=self.apply
+        ).pack(pady=20)
+
+    def apply(self):
+        settings = self.app.plane_settings
+
+        settings.color = self.color_var.get()
+        settings.linewidth = self.linewidth_var.get()
+        settings.linestyle = self.linestyle_var.get()
+        settings.alpha = self.alpha_var.get()
+        settings.segments = self.segments_var.get()
+
+        if self.app.data:
+            self.app.plot_great_circles()
+
+        self.destroy()
 
 
 if __name__ == "__main__":

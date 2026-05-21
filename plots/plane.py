@@ -4,7 +4,7 @@ from dataclasses import dataclass, asdict
 @dataclass
 class PlaneSettings:
     color: str = "green"      # Farba
-    linewidth: float = 1.5    # Hrúbka čiary
+    linewidth: float = 1      # Hrúbka čiary
     linestyle: str = "-"      # Štýl čiary (napríklad "-", "--", "-.", ":")
     segments: int = 50        # Počet segmentov pre vykreslenie krivky (vyššie číslo = hladšia krivka)
     alpha: float = 1.0        # Priehľadnosť (0.0 = úplne priehľadné, 1.0 = nepriehľadné)
