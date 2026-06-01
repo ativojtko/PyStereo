@@ -1,3 +1,7 @@
+import tkinter as tk
+from tkinter import ttk
+
+
 class LineationSettingsDialog(tk.Toplevel):
     def __init__(self, parent, app):
         super().__init__(parent)
@@ -114,7 +118,6 @@ class PlaneSettingsDialog(tk.Toplevel):
         self._build_ui()
 
     def _build_ui(self):
-
         ttk.Label(self, text="Colour").pack(pady=5)
 
         ttk.Entry(
@@ -180,4 +183,113 @@ class PlaneSettingsDialog(tk.Toplevel):
             self.app.plot_great_circles()
 
         self.destroy()
+
+class ContourSettingsDialog(tk.Toplevel):
+    def __init__(self, parent, app):
+        super().__init__(parent)
+
+        self.app = app
+
+        self.title("Contour Settings")
+        self.geometry("350x450")
+        self.resizable(False, False)
+
+        self.transient(parent)
+        self.grab_set()
+
+        settings = app.contour_settings
         
+        self.cmap_var = tk.StringVar(value=settings.cmap)
+        self.levels_var = tk.IntVar(value=settings.levels)
+        self.alpha_var = tk.DoubleVar(value=settings.alpha)
+
+        self.show_points_var = tk.BooleanVar(
+            value=settings.show_points
+        )
+
+        self.point_size_var = tk.DoubleVar(
+            value=settings.point_size
+        )
+
+        self._build_ui()
+
+    def _build_ui(self):
+        ttk.Label(self, text="Colour Map").pack(pady=5)
+
+        ttk.Combobox(
+            self,
+            textvariable=self.cmap_var,
+            values=[
+                "Grays",
+                "binary",
+                "viridis",
+                "plasma",
+                "inferno",
+                "magma",
+                "jet",
+                "terrain",
+                "cividis",
+                "Reds"
+            ],
+            state="readonly"
+        ).pack()
+
+        ttk.Label(self, text="Levels").pack(pady=5)
+
+        ttk.Scale(
+            self,
+            from_=3,
+            to=30,
+            variable=self.levels_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Label(self, text="Alpha").pack(pady=5)
+
+        ttk.Scale(
+            self,
+            from_=0.1,
+            to=1.0,
+            variable=self.alpha_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Checkbutton(
+            self,
+            text="Show Points",
+            variable=self.show_points_var
+        ).pack(pady=10)
+
+        ttk.Label(self, text="Point Size").pack(pady=5)
+
+        ttk.Scale(
+            self,
+            from_=1,
+            to=10,
+            variable=self.point_size_var,
+            orient="horizontal"
+        ).pack(fill="x", padx=20)
+
+        ttk.Button(
+            self,
+            text="Apply",
+            command=self.apply
+        ).pack(pady=20)
+
+    def apply(self):
+        settings = self.app.contour_settings
+
+        settings.cmap = self.cmap_var.get()
+        settings.levels = int(self.levels_var.get())
+        settings.alpha = self.alpha_var.get()
+
+        settings.show_points = self.show_points_var.get()
+        settings.point_size = self.point_size_var.get()
+
+        if self.app.data:
+            self.app.plot_contours()
+
+        self.destroy()
+
+
+# End of stereo.py: (c) 2026 R. Vojtko, H. Balažovjechová
