@@ -2,18 +2,35 @@ import sys
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import mplstereonet
 from plots.lineation import LineationSettings
 from plots.plane import PlaneSettings
+from plots.contour import ContourSettings
 from projection import StereonetProjection
+from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSettingsDialog
+from gui.panels import DataPanel, PlotPanel
 
 
-__VERSION__ = "0.17.0"
+__VERSION__ = "0.19.0"
 __AUTHOR__ = ("Rastislav Vojtko", \
               "Hana Balažovjechová", \
               "Zuzana Lahová")
+__DATE__ = '2026-05-26'
+
+__LICENSE__ = """GNU General Public License v. 3\n
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+For more information see <http://www.gnu.org/licenses/>."""
+
+__ADDRESS__ = """\nDepartment of Geology and Palaeontology
+Faculty of Natural Sciences
+Comenius University in Bratislava
+Mlynská dolina, Ilkovičova 6
+SK-842 15 Bratislava
+Slovakia"""
+
+__EMAIL__ = 'e-mail: rastislav.vojtko@gmail.com'
 
 
 class StereoApp:
@@ -37,6 +54,7 @@ class StereoApp:
         
         self.lineation_settings = LineationSettings()
         self.plane_settings = PlaneSettings()
+        self.contour_settings = ContourSettings()
 
         self.data = []
         self.data_loaded = False
@@ -82,51 +100,38 @@ class StereoApp:
         file_menu.add_command(label="Open", command=self.load_file)
         file_menu.add_command(label="Close", command=self.close_data)
         file_menu.add_separator()
-        file_menu.add_command(label="Export Plot...",
-                                command=self.export_plot
-                                )
+        file_menu.add_command(label="Export Plot...", command=self.export_plot)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.destroy)
         menubar.add_cascade(label="File", menu=file_menu)
 
         # Plot menu with Lineations and Great circles options
         plot_menu = tk.Menu(menubar, tearoff=0)
-        plot_menu.add_command(label="Lineations",
-                              command=self.plot_lineations
-                        )
-        plot_menu.add_command(label="Great circles",
-                              command=self.plot_great_circles
-                        )
-        plot_menu.add_command(label="Combined Plot",
-                              command=self.plot_combined
-                )
+        plot_menu.add_command(label="Lineations", command=self.plot_lineations)
+        plot_menu.add_command(label="Great circles", command=self.plot_great_circles)
+        plot_menu.add_command(label="Combined Plot", command=self.plot_combined)
         plot_menu.add_separator()
-        plot_menu.add_command(label="Contour Plot",
-                              command=self.plot_contours
-                )
-        plot_menu.add_command(label="Clear stereogram",
-                              command=self.plot_clear_stereogram
-                        )
+        plot_menu.add_command(label="Contour Plot", command=self.plot_contours)
+        plot_menu.add_command(label="Clear stereogram", command=self.plot_clear_stereogram)
         menubar.add_cascade(label="Plot", menu=plot_menu)
 
         # Settings menu with Lineation settings option
         settings_menu = tk.Menu(menubar, tearoff=0)
-        settings_menu.add_command(
-                            label="Lineations...",
-            command=self.open_lineation_settings
-        )
-        settings_menu.add_command(
-                            label="Planes...",
-            command=self.open_plane_settings
-        )
+        settings_menu.add_command(label="Lineations", command=self.open_lineation_settings)
+        settings_menu.add_command(label="Planes", command=self.open_plane_settings)
+        settings_menu.add_command(label="Contours", command=self.open_contour_settings)
         menubar.add_cascade(label="Settings", menu=settings_menu)
 
         # Help menu with About option
         help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="About...", 
-                              command=lambda: messagebox.showinfo("About...", 
-                                    "Stereo " + __VERSION__ + "\n\n2026\n\nAutori:\n" 
-                                    + "\n".join(__AUTHOR__)))
+        help_menu.add_command(label="About...",
+                              command=lambda: messagebox.showinfo(
+                                  "About Stereo...",
+                                  "Stereo " + __VERSION__ + "\nBuild: " + __DATE__ + "\n\n"
+                                  + "\n".join(__AUTHOR__) + "\n\n"  
+                                  + __LICENSE__ + "\n" + __ADDRESS__ + "\n\n"
+                                  + __EMAIL__
+                              ))
         menubar.add_cascade(label="Help", menu=help_menu)
 
         # Configuration of the window to display this menu
@@ -149,7 +154,6 @@ class StereoApp:
 
             if not answer:
                 return
-
 
         path = filedialog.askopenfilename(
             title="Select a text file containing data",
@@ -224,7 +228,6 @@ class StereoApp:
         self.plot_panel.clear()
         self.status_var.set(" No file loaded")
 
-
     def export_plot(self):
         if not self.plot_panel.has_plots:
             messagebox.showwarning("No plot",
@@ -282,7 +285,6 @@ class StereoApp:
                 str(e)
             )
 
-
 # Plotting methods for lineations and great circles, and clearing the stereogram
     def plot_lineations(self):
         if not self.data:
@@ -291,14 +293,12 @@ class StereoApp:
         
         self.plot_panel.redraw(self.data, mode="lineations")
 
-
     def plot_great_circles(self):
         if not self.data:
             messagebox.showwarning("No data", "Load data first.")
             return
         
         self.plot_panel.redraw(self.data, mode="planes")
-
 
     def plot_combined(self):
         if not self.data:
@@ -307,10 +307,8 @@ class StereoApp:
 
         self.plot_panel.redraw(self.data, mode="all")
 
-
     def plot_clear_stereogram(self):
         self.plot_panel.clear()
-
 
     def plot_contours(self):
         if not self.data:
@@ -319,6 +317,7 @@ class StereoApp:
 
         self.plot_panel.redraw(self.data, mode="contours")
 
+
 # Settings dialog methods
     def open_lineation_settings(self):
         LineationSettingsDialog(self.root, self)
@@ -326,348 +325,8 @@ class StereoApp:
     def open_plane_settings(self):
         PlaneSettingsDialog(self.root, self)
 
-
-class DataPanel(tk.Frame):
-    def __init__(self, parent, app):
-        super().__init__(parent)
-        self.app = app
-
-
-        columns = ("id", "type", "azimuth", "dip", "comment")
-
-        # Kontajner pre tabuľku a scrollbary
-        table_frame = tk.Frame(self)
-        table_frame.pack(fill="both", expand=True)
-
-        # Grid konfigurácia
-        table_frame.columnconfigure(0, weight=1)
-        table_frame.rowconfigure(0, weight=1)
-
-        # Treeview
-        self.tree = ttk.Treeview(
-            table_frame,
-            columns=columns,
-            show="headings"
-        )
-
-        # Scrollbary
-        self.scrollbar = ttk.Scrollbar(
-            table_frame,
-            orient=tk.VERTICAL,
-            command=self.tree.yview
-        )
-
-        self.xscrollbar = ttk.Scrollbar(
-            table_frame,
-            orient=tk.HORIZONTAL,
-            command=self.tree.xview
-        )
-
-        # Prepojenie scrollov
-        self.tree.configure(
-            yscrollcommand=self.scrollbar.set,
-            xscrollcommand=self.xscrollbar.set
-        )
-
-        # Hlavičky
-        self.tree.heading("id", text="ID")
-        self.tree.heading("type", text="Type")
-        self.tree.heading("azimuth", text="Azimuth")
-        self.tree.heading("dip", text="Dip")
-        self.tree.heading("comment", text="Comment", anchor="w")
-
-        # Stĺpce
-        self.tree.column("id", width=40, minwidth=40, stretch=tk.NO, anchor="center")
-        self.tree.column("type", width=60, minwidth=60, stretch=tk.NO, anchor="center")
-        self.tree.column("azimuth", width=70, minwidth=60, stretch=tk.NO, anchor="e")
-        self.tree.column("dip", width=70, minwidth=60, stretch=tk.NO, anchor="e")
-        self.tree.column("comment", width=125, minwidth=100, stretch=tk.YES, anchor="w")
-
-        # Rozloženie cez grid
-        self.tree.grid(row=0, column=0, sticky="nsew")
-        self.scrollbar.grid(row=0, column=1, sticky="ns")
-        self.xscrollbar.grid(row=1, column=0, sticky="ew")
-
-
-    def refresh(self, data):
-        """
-        Updates the data table with the currently loaded structural dataset.
-
-        Existing rows are cleared before inserting new data to keep
-        the table synchronised with StereoApp.data.
-        """
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        for row in data:
-            self.tree.insert(
-                "",
-                "end",
-                values=(
-                    row["id"],
-                    row["type"],
-                    row["azimuth"],
-                    row["dip"],
-                    row["comment"]
-                )
-            )
-
-
-class PlotPanel(tk.Frame):
-    def __init__(self, parent, app):
-        super().__init__(parent, bg="white")
-        self.app = app
-        
-        self.fig = plt.Figure(figsize=(5,5))
-        self.ax = self.fig.add_subplot(111, projection="stereonet")
-        self.ax.grid(False)
-        self.ax.text(0.5, 0.5, "+",
-                    transform=self.ax.transAxes,
-                    ha="center",
-                    va="center",
-                    fontsize=14
-                    )
-
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
-        self.canvas.get_tk_widget().pack(fill="both", expand=True)
-
-        self.projection = None
-        self.canvas.draw()
-
-
-    def redraw(self, data, mode="all"):
-        if self.projection is None:
-            self.projection = StereonetProjection(
-                self.ax, 
-                self.canvas, 
-                data, 
-                self.app.lineation_settings,
-                self.app.plane_settings
-                )
-        else:
-            self.projection.data = data
-            self.projection.plots.clear()
-            self.projection.lineation_settings = self.app.lineation_settings
-            self.projection.plane_settings = self.app.plane_settings
-
-        self.ax.cla()
-
-        self.projection.ax = self.ax
-        self.projection.draw(mode=mode)
-
-        self.ax.grid(False)
-        self._setup_axes()
-
-        self.has_plots = True
-        self.canvas.draw_idle()
-
-    
-    def clear(self):
-        self.ax.cla()
-        self.ax.grid(False)
-        self._setup_axes()
-
-        self.has_plots = False 
-        self.canvas.draw_idle()
-        
-
-    def _setup_axes(self):
-        self.ax.grid(False)
-        self.ax.text(
-            0.5, 0.5, "+",
-            transform=self.ax.transAxes,
-            ha="center",
-            va="center",
-            fontsize=14
-        )
-
-
-    def highlight(self, index):
-        pass
-
-
-class LineationSettingsDialog(tk.Toplevel):
-    def __init__(self, parent, app):
-        super().__init__(parent)
-
-        self.app = app
-        self.title("Lineation Settings")
-        self.geometry("350x450")
-        self.resizable(False, False)
-
-        self.transient(parent)
-        self.grab_set()
-
-        settings = app.lineation_settings
-
-        self.marker_var = tk.StringVar(value=settings.marker)
-        self.size_var = tk.DoubleVar(value=settings.markersize)
-        self.color_var = tk.StringVar(value=settings.color)
-        self.alpha_var = tk.DoubleVar(value=settings.alpha)
-        self.edgecolor_var = tk.StringVar(value=settings.markeredgecolor)
-        self.edgewidth_var = tk.DoubleVar(value=settings.markeredgewidth)
-
-        self._build_ui()
-
-    def _build_ui(self):
-        ttk.Label(self, text="Marker").pack(pady=5)
-        ttk.Combobox(
-            self,
-            textvariable=self.marker_var,
-            values=["o", "^", "s", "x", "d"]
-        ).pack()
-
-        ttk.Label(self, text="Size").pack(pady=5)
-        ttk.Scale(
-            self,
-            from_=2,
-            to=20,
-            variable=self.size_var,
-            orient="horizontal"
-        ).pack(fill="x", padx=20)
-
-        ttk.Label(self, text="Colour").pack(pady=5)
-        ttk.Entry(self, textvariable=self.color_var).pack()
-
-        ttk.Label(self, text="Alpha").pack(pady=5)
-
-        ttk.Scale(
-            self,
-            from_=0.1,
-            to=1.0,
-            variable=self.alpha_var,
-            orient="horizontal"
-        ).pack(fill="x", padx=20)
-
-        ttk.Label(self, text="Edge Colour").pack(pady=5)
-
-        ttk.Entry(
-            self,
-            textvariable=self.edgecolor_var
-        ).pack()
-
-        ttk.Label(self, text="Edge Width").pack(pady=5)
-
-        ttk.Scale(
-            self,
-            from_=0.0,
-            to=5.0,
-            variable=self.edgewidth_var,
-            orient="horizontal"
-        ).pack(fill="x", padx=20)
-
-        ttk.Button(
-            self,
-            text="Apply",
-            command=self.apply
-        ).pack(pady=20) 
-
-
-    def apply(self):
-        settings = self.app.lineation_settings
-
-        settings.marker = self.marker_var.get()
-        settings.markersize = self.size_var.get()
-        settings.color = self.color_var.get()
-        settings.alpha = self.alpha_var.get()
-        settings.markeredgecolor = self.edgecolor_var.get()
-        settings.markeredgewidth = self.edgewidth_var.get()
-
-        if self.app.data:
-            self.app.plot_lineations()
-
-        self.destroy()
-
-class PlaneSettingsDialog(tk.Toplevel):
-    def __init__(self, parent, app):
-        super().__init__(parent)
-
-        self.app = app
-
-        self.title("Plane Settings")
-        self.geometry("350x350")
-        self.resizable(False, False)
-
-        self.transient(parent)
-        self.grab_set()
-
-        settings = app.plane_settings
-
-        self.color_var = tk.StringVar(value=settings.color)
-        self.linewidth_var = tk.DoubleVar(value=settings.linewidth)
-        self.linestyle_var = tk.StringVar(value=settings.linestyle)
-        self.alpha_var = tk.DoubleVar(value=settings.alpha)
-        self.segments_var = tk.IntVar(value=settings.segments)
-
-        self._build_ui()
-
-    def _build_ui(self):
-
-        ttk.Label(self, text="Colour").pack(pady=5)
-
-        ttk.Entry(
-            self,
-            textvariable=self.color_var
-        ).pack()
-
-        ttk.Label(self, text="Line Width").pack(pady=5)
-
-        ttk.Scale(
-            self,
-            from_=0.5,
-            to=5.0,
-            variable=self.linewidth_var,
-            orient="horizontal"
-        ).pack(fill="x", padx=20)
-
-        ttk.Label(self, text="Line Style").pack(pady=5)
-
-        ttk.Combobox(
-            self,
-            textvariable=self.linestyle_var,
-            values=["-", "--", "-.", ":"],
-            state="readonly"
-        ).pack()
-
-        ttk.Label(self, text="Alpha").pack(pady=5)
-
-        ttk.Scale(
-            self,
-            from_=0.1,
-            to=1.0,
-            variable=self.alpha_var,
-            orient="horizontal"
-        ).pack(fill="x", padx=20)
-
-        ttk.Label(self, text="Segments").pack(pady=5)
-
-        ttk.Scale(
-            self,
-            from_=10,
-            to=200,
-            variable=self.segments_var,
-            orient="horizontal"
-        ).pack(fill="x", padx=20)
-
-        ttk.Button(
-            self,
-            text="Apply",
-            command=self.apply
-        ).pack(pady=20)
-
-    def apply(self):
-        settings = self.app.plane_settings
-
-        settings.color = self.color_var.get()
-        settings.linewidth = self.linewidth_var.get()
-        settings.linestyle = self.linestyle_var.get()
-        settings.alpha = self.alpha_var.get()
-        settings.segments = self.segments_var.get()
-
-        if self.app.data:
-            self.app.plot_great_circles()
-
-        self.destroy()
+    def open_contour_settings(self):
+        ContourSettingsDialog(self.root, self)
 
 
 if __name__ == "__main__":
@@ -676,4 +335,4 @@ if __name__ == "__main__":
     root.mainloop()
     
 
-# End of stereo.py: (c) 2026 RVOJTKO
+# End of stereo.py: (c) 2026 R. Vojtko, H. Balažovjechová, Z. Lahová

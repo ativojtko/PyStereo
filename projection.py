@@ -1,15 +1,15 @@
 import matplotlib.pyplot as plt
 import mplstereonet
-from plots import LineationPlot, PlanePlot, ContourPlot, LineationSettings
-
+from plots import LineationPlot, PlanePlot, ContourPlot
 
 class StereonetProjection:
-    def __init__(self, ax, canvas, data, lineation_settings, plane_settings):
+    def __init__(self, ax, canvas, data, lineation_settings, plane_settings, contour_settings):
         self.ax = ax
         self.canvas = canvas
         self.data = data
         self.lineation_settings = lineation_settings
         self.plane_settings = plane_settings
+        self.contour_settings = contour_settings
         self.plots = []     # uloženie (obj, údaje)
         self.annot = None   # aktuálny textový label
         self.highlight = None  # zvýraznený objekt
@@ -24,13 +24,18 @@ class StereonetProjection:
         self.ax.cla()
 
         if mode == "contours":
-            contour_plot = ContourPlot(self.ax, self.data)
+            contour_plot = ContourPlot(
+                self.ax,
+                self.data,
+                settings=self.contour_settings
+            )
+
             contour_plot.draw()
 
             self.ax.grid()
             self.canvas.draw_idle()
             return
-
+        
         legend_labels = {"S": False, "L": False}
 
         for i in self.data:

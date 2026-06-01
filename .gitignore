@@ -10,3 +10,4 @@ __pycache__/
 # Systémové súbory
 .DS_Store
 Thumbs.db
+changelog.log
