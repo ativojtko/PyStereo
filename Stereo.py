@@ -10,11 +10,13 @@ from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSet
 from gui.panels import DataPanel, PlotPanel
 
 
-__VERSION__ = "0.19.0"
+__VERSION__ = "0.20.0"
 __AUTHOR__ = ("Rastislav Vojtko", \
               "Hana Balažovjechová", \
+              "Miroslav Zverka", \
+              "Marcel Vasiľák", \
               "Zuzana Lahová")
-__DATE__ = '2026-05-26'
+__DATE__ = '2026-07-11'
 
 __LICENSE__ = """GNU General Public License v. 3\n
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -115,6 +117,11 @@ class StereoApp:
         plot_menu.add_command(label="Clear stereogram", command=self.plot_clear_stereogram)
         menubar.add_cascade(label="Plot", menu=plot_menu)
 
+        # Statistics
+        statistics_menu = tk.Menu(menubar, tearoff=0)
+        statistics_menu.add_command(label="Fisher Distribution", command=self.fisher_distribution)
+        menubar.add_cascade(label="Statistics", menu=statistics_menu)
+
         # Settings menu with Lineation settings option
         settings_menu = tk.Menu(menubar, tearoff=0)
         settings_menu.add_command(label="Lineations", command=self.open_lineation_settings)
@@ -148,8 +155,8 @@ class StereoApp:
         """
         if self.data:
             answer = messagebox.askyesno(
-                "Replace dataset",
-                "A dataset is already loaded.\n\nReplace it with a new one?"
+                "Replace the current dataset",
+                "The dataset is already loaded.\n\nReplace it with a new one?"
             )
 
             if not answer:
@@ -175,6 +182,9 @@ class StereoApp:
 
 
     def read_data(self, file_path):
+        """Reads a text file containing structural data and returns a list 
+        of dictionaries representing the data.
+        Each line in the file should contain the following tab-separated values:"""
         data = []
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -201,11 +211,11 @@ class StereoApp:
                     except ValueError:
                         continue
         
-            #print(f"Data načítané z {file_path}: {data}")
+            print(f"Loaded {len(data)} records from {file_path}")
             return data
 
         except Exception as e:
-            messagebox.showerror("Error", f"Nepodarilo sa prečítať súbor:\n{e}")
+            messagebox.showerror("Error", f"Unable to read the file:\n{e}")
         return []
 
     def set_data(self, data):
@@ -218,7 +228,7 @@ class StereoApp:
 
     def close_data(self):
         if self.data:
-            if not messagebox.askyesno("Close", "Close actual data?"):
+            if not messagebox.askyesno("Close dataset", "Close the current dataset?"):
                 return
             
         self.data = []
@@ -226,11 +236,11 @@ class StereoApp:
 
         self.data_panel.refresh([])
         self.plot_panel.clear()
-        self.status_var.set(" No file loaded")
+        self.status_var.set("No file loaded")
 
     def export_plot(self):
         if not self.plot_panel.has_plots:
-            messagebox.showwarning("No plot",
+            messagebox.showwarning("No plot exported",
                                 "Create a stereogram first."
                     )
             return
@@ -288,21 +298,21 @@ class StereoApp:
 # Plotting methods for lineations and great circles, and clearing the stereogram
     def plot_lineations(self):
         if not self.data:
-            messagebox.showwarning("No data", "Load data first.")
+            messagebox.showwarning("No data loaded", "Please load a dataset first.")
             return
         
         self.plot_panel.redraw(self.data, mode="lineations")
 
     def plot_great_circles(self):
         if not self.data:
-            messagebox.showwarning("No data", "Load data first.")
+            messagebox.showwarning("No data loaded", "Please load a dataset first.")
             return
         
         self.plot_panel.redraw(self.data, mode="planes")
 
     def plot_combined(self):
         if not self.data:
-            messagebox.showwarning("No data", "Load data first.")
+            messagebox.showwarning("No data loaded", "Please load a dataset first.")
             return
 
         self.plot_panel.redraw(self.data, mode="all")
@@ -312,10 +322,15 @@ class StereoApp:
 
     def plot_contours(self):
         if not self.data:
-            messagebox.showwarning("No data", "Load data first.")
+            messagebox.showwarning("No data loaded", "Please load a dataset first.")
             return
 
         self.plot_panel.redraw(self.data, mode="contours")
+
+
+# Statistics dialog methods
+    def fisher_distribution(self):
+        pass
 
 
 # Settings dialog methods
@@ -334,5 +349,4 @@ if __name__ == "__main__":
     app = StereoApp(root)
     root.mainloop()
     
-
 # End of stereo.py: (c) 2026 R. Vojtko, H. Balažovjechová, Z. Lahová
