@@ -4,7 +4,7 @@ from dataclasses import dataclass, asdict
 @dataclass
 class LineationSettings:
     marker: str = "o"              # Tvar bodu (o = krúžok, ^ = trojuholník, s = štvorec)
-    markersize: float = 6.0        # Veľkosť bodu
+    markersize: float = 7.0        # Veľkosť bodu
     color: str = "red"             # Farba
     alpha: float = 1.0             # Priehľadnosť (0.0 = úplne priehľadné, 1.0 = nepriehľadné)
     markeredgecolor: str = "black" # Farba obrysu bodu
