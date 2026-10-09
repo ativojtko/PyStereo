@@ -16,7 +16,7 @@ __AUTHOR__ = ("Rastislav Vojtko", \
               "Miroslav Zverka", \
               "Marcel Vasiľák", \
               "Zuzana Lahová")
-__DATE__ = '2026-07-11'
+__DATE__ = '2026-09-26'
 
 __LICENSE__ = """GNU General Public License v. 3\n
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -120,6 +120,7 @@ class StereoApp:
         # Statistics
         statistics_menu = tk.Menu(menubar, tearoff=0)
         statistics_menu.add_command(label="Fisher Distribution", command=self.fisher_distribution)
+        statistics_menu.add_command(label="Bingham Distribution", state="disabled")  # Disable the option for now
         menubar.add_cascade(label="Statistics", menu=statistics_menu)
 
         # Settings menu with Lineation settings option
@@ -164,9 +165,9 @@ class StereoApp:
 
         path = filedialog.askopenfilename(
             title="Select a text file containing data",
-            filetypes=(("Plain text file", "*.txt"), \
+            filetypes=(("Comma separated values", "*.csv"), \
                        ("Tab separated values", "*.tsv"), \
-                       ("Comma separated values", "*.csv"), \
+                       ("Plain text file", "*.txt"), \
                        ("All files", "*.*"))
         )
 
@@ -189,14 +190,17 @@ class StereoApp:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 for line in f:
-                    line = line.strip()
+                    line = line.rstrip("\r\n")
                     if not line:
                         continue
 
                     parts = line.split("\t")
 
-                    if len(parts) < 5:
+
+                    if len(parts) < 4:
                         continue
+
+                    comment = parts[4] if len(parts) > 4 else ""
 
                     try:
                         item = {
@@ -204,11 +208,13 @@ class StereoApp:
                             "type": parts[1],
                             "azimuth": float(parts[2]),
                             "dip": float(parts[3]),
-                            "comment": parts[4]
+                            "comment": comment
                         }
                         data.append(item)
 
                     except ValueError:
+                        print(f"Skipping invalid line: {line}")
+                        print(e)
                         continue
         
             print(f"Loaded {len(data)} records from {file_path}")
