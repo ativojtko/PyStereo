@@ -5,21 +5,21 @@ from dataclasses import dataclass
 @dataclass
 class ContourSettings:
     # ---- contour appearance ----
-    cmap: str = "viridis"
+    cmap: str = "binary"
     alpha: float = 1.0
-    levels: int = 12
+    levels: int = 9
 
     # ---- contour lines ----
     show_lines: bool = False
     linecolor: str = "black"
-    linewidth: float = 1.0
+    linewidth: float = 3.0
     linestyle: str = "-"
 
     # ---- data points ----
     show_points: bool = True
     point_color: str = "black"
     point_marker: str = "o"
-    point_size: float = 2.0
+    point_size: float = 7.0
 
     # ---- density method ----
     measurement: str = "lines"
