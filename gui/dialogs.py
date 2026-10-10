@@ -94,6 +94,7 @@ class LineationSettingsDialog(tk.Toplevel):
 
         self.destroy()
 
+
 class PlaneSettingsDialog(tk.Toplevel):
     def __init__(self, parent, app):
         super().__init__(parent)
@@ -183,6 +184,7 @@ class PlaneSettingsDialog(tk.Toplevel):
             self.app.plot_great_circles()
 
         self.destroy()
+
 
 class ContourSettingsDialog(tk.Toplevel):
     def __init__(self, parent, app):
@@ -290,6 +292,3 @@ class ContourSettingsDialog(tk.Toplevel):
             self.app.plot_contours()
 
         self.destroy()
-
-
-# End of stereo.py: (c) 2026 R. Vojtko, H. Balažovjechová

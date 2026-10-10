@@ -149,6 +149,3 @@ class StereonetProjection:
 
 if __name__ == "__main__":
     print("This is a projection module. Run stereo.py to test.")
-
-
-# End of projection.py: (c) 2026 RVOJTKO

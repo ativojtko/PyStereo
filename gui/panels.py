@@ -151,5 +151,3 @@ class PlotPanel(tk.Frame):
 
     def highlight(self, index):
         pass
-
-# End of stereo.py: (c) 2026 R. Vojtko, H. Balažovjechová

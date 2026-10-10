@@ -79,5 +79,3 @@ class ContourPlot:
                 linestyle='None',
                 markersize=self.settings.point_size
             )
-
-# End of contour.py: (c) 2026 R. Vojtko, H. Balažovjechová

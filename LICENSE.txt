@@ -1,6 +1,7 @@
 MIT License
 
-Copyright (c) 2025 Rastislav Vojtko
+Copyright (c) 2026 Rastislav Vojtko, Hana Balažovjechová, Miroslav Zverka
+                   Marcel Vasiľák, Zuzana Lahová
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -29,6 +29,3 @@ class LineationPlot:
         )
 
         return obj
-
-
-# End of lineation.py: (c) 2026 RVOJTKO

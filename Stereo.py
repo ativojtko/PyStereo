@@ -354,5 +354,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = StereoApp(root)
     root.mainloop()
-    
-# End of stereo.py: (c) 2026 R. Vojtko, H. Balažovjechová, Z. Lahová

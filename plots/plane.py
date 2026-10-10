@@ -29,6 +29,3 @@ class PlanePlot:
         
         return obj
     
-
-# End of plane.py: (c) 2026 R. Vojtko, H. Balažovjechová
-    
