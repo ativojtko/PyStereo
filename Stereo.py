@@ -16,7 +16,7 @@ __AUTHOR__ = ("Rastislav Vojtko", \
               "Miroslav Zverka", \
               "Marcel Vasiľák", \
               "Zuzana Lahová")
-__DATE__ = '2026-09-26'
+__DATE__ = '2026-10-09'
 
 __LICENSE__ = """GNU General Public License v. 3\n
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
