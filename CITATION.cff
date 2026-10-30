@@ -13,9 +13,8 @@ authors:
   - family-names: "Zuzana"
     given-names: "Lahová"
 title: "PyStereo"
-version: "0.20.1"
-#doi: "10.5281/zenodo.1234567" # Nepovinné (vymažte riadok, ak nemáte DOI z platformy Zenodo)
-date-released: 2026-10-15     # Predpokladaný dátum zverejnenia (RRRR-MM-DD)
+version: "0.21.0"
+date-released: 2026-10-30     
 url: "https://github.com/ativojtko/PyStereo"
 keywords:
   - "python"
