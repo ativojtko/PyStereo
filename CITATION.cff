@@ -1,0 +1,25 @@
+cff-version: 0.20.1
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Blažovjechová"
+    given-names: "Hana"
+  - family-names: "Vojtko"
+    given-names: "Rastislav"
+    orcid: "https://orcid.org/0000-0003-4504-5053"
+  - family-names: "Zverka"
+    given-names: "Miroslav"
+  - family-names: "Marcel"
+    given-names: "Vasiľák"
+  - family-names: "Zuzana"
+    given-names: "Lahová"
+title: "PyStereo"
+version: "0.20.1"
+#doi: "10.5281/zenodo.1234567" # Nepovinné (vymažte riadok, ak nemáte DOI z platformy Zenodo)
+date-released: 2026-10-15     # Predpokladaný dátum zverejnenia (RRRR-MM-DD)
+url: "https://github.com/ativojtko/PyStereo"
+keywords:
+  - "python"
+  - "oriented geological data"
+  - "visualisation"
+  - "basic statistics"
+abstract: "PyStereo is an open-source Python application for the stereographic analysis and visualization of oriented geological data. It supports the graphical representation and interpretation of structural geological measurements using stereographic projections."

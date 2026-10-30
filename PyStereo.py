@@ -10,20 +10,25 @@ from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSet
 from gui.panels import DataPanel, PlotPanel
 
 
-__VERSION__ = "0.20.0"
-__AUTHOR__ = ("Rastislav Vojtko", \
-              "Hana Balažovjechová", \
+__VERSION__ = "0.21.0"
+__AUTHOR__ = ("Hana Balažovjechová", \
+              "Rastislav Vojtko", \
               "Miroslav Zverka", \
               "Marcel Vasiľák", \
               "Zuzana Lahová")
-__DATE__ = '2026-10-09'
 
-__LICENSE__ = """GNU General Public License v. 3\n
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+__LOCATION__ = "https://github.com/ativojtko/PyStereo"
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+__DATE__ = '2026-10-14'
 
-For more information see <http://www.gnu.org/licenses/>."""
+__LICENSE__ = """MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
 
 __ADDRESS__ = """\nDepartment of Geology and Palaeontology
 Faculty of Natural Sciences
@@ -32,13 +37,17 @@ Mlynská dolina, Ilkovičova 6
 SK-842 15 Bratislava
 Slovakia"""
 
-__EMAIL__ = 'e-mail: rastislav.vojtko@gmail.com'
+__EMAIL__ = """
+e-mails:
+hana.balazovjechova@gmail.com
+rastislav.vojtko@gmail.com
+"""
 
 
 class StereoApp:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"Stereo {__VERSION__}")
+        self.root.title(f"PyStereo {__VERSION__}")
         self.root.geometry("1000x600+100+100")
 
         # Nastavenie ikony aplikáce (Windows vs. ostatné platformy)
@@ -117,10 +126,19 @@ class StereoApp:
         plot_menu.add_command(label="Clear stereogram", command=self.plot_clear_stereogram)
         menubar.add_cascade(label="Plot", menu=plot_menu)
 
+        # Calculations
+        calculations_menu = tk.Menu(menubar, tearoff=0)
+        calculations_menu.add_command(label="Planes to poles", command=self.planes_to_poles)
+        calculations_menu.add_command(label="Poles to planes", command=lambda: messagebox.showinfo("Poles to planes", "This feature is not yet implemented."))
+        calculations_menu.add_separator()
+        calculations_menu.add_command(label="Rotation...", command=lambda: messagebox.showinfo("Rotation around an arbitrary axis", "This feature is not yet implemented."))
+        menubar.add_cascade(label="Calculations", menu=calculations_menu)
+
         # Statistics
         statistics_menu = tk.Menu(menubar, tearoff=0)
-        statistics_menu.add_command(label="Fisher Distribution", command=self.fisher_distribution)
-        statistics_menu.add_command(label="Bingham Distribution", state="disabled")  # Disable the option for now
+        statistics_menu.add_command(label="Mean vector", command=lambda: messagebox.showinfo("Mean vector", "This feature is not yet implemented."))
+        statistics_menu.add_command(label="Fisher Distribution", command=lambda: messagebox.showinfo("Fisher Distribution", "This feature is not yet implemented."))
+        statistics_menu.add_command(label="Bingham Distribution", command=lambda: messagebox.showinfo("Bingham Distribution", "This feature is not yet implemented."))  # Disable the option for now
         menubar.add_cascade(label="Statistics", menu=statistics_menu)
 
         # Settings menu with Lineation settings option
@@ -132,14 +150,17 @@ class StereoApp:
 
         # Help menu with About option
         help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="About...",
-                              command=lambda: messagebox.showinfo(
-                                  "About Stereo...",
-                                  "Stereo " + __VERSION__ + "\nBuild: " + __DATE__ + "\n\n"
-                                  + "\n".join(__AUTHOR__) + "\n\n"  
-                                  + __LICENSE__ + "\n" + __ADDRESS__ + "\n\n"
-                                  + __EMAIL__
+        help_menu.add_command(label="License", command=lambda: messagebox.showinfo(
+                                          "License",
+                                            __LICENSE__
                               ))
+        help_menu.add_command(label="About...",
+                                      command=lambda: messagebox.showinfo(
+                                          "About PyStereo...",
+                                          "PyStereo " + __VERSION__ + "\n" + __LOCATION__ + "\nBuild: " 
+                                          + __DATE__ + "\n\n" + "\n".join(__AUTHOR__) + "\n\n" 
+                                          + __ADDRESS__ + "\n\n" + __EMAIL__
+                                      ))
         menubar.add_cascade(label="Help", menu=help_menu)
 
         # Configuration of the window to display this menu
@@ -207,7 +228,7 @@ class StereoApp:
                             "id": int(parts[0]),
                             "type": parts[1],
                             "azimuth": float(parts[2]),
-                            "dip": float(parts[3]),
+                            "inclination": float(parts[3]),
                             "comment": comment
                         }
                         data.append(item)
@@ -272,7 +293,7 @@ class StereoApp:
 
             metadata = self.plot_panel.fig.text(
                 0.98, 0.02,
-                f"Stereo {__VERSION__}\n"
+                f"PyStereo {__VERSION__}\n"
                 f"{self.current_file}\n"
                 f"n = {len(self.data)}\n",
                 ha="right",
@@ -292,7 +313,7 @@ class StereoApp:
 
             messagebox.showinfo(
                 "Export",
-                f"Stereogram exported successfully:\n{file_path}"
+                f"Stereogram exported successfully:\n\n{file_path}"
             )
 
         except Exception as e:
@@ -332,6 +353,86 @@ class StereoApp:
             return
 
         self.plot_panel.redraw(self.data, mode="contours")
+
+
+# Calculations methods
+    def planes_to_poles(self):
+        """Convert planes (S) to poles (L) and save them to a new file."""
+
+        # If no self.data then message box warning
+        if not self.data:
+            messagebox.showwarning(
+                "No data loaded",
+                "Please load a dataset first."
+            )
+            return
+
+        # Check whether the dataset contains any planes.
+        plane_count = sum(
+            item["type"] == "S" for item in self.data
+        )
+
+        if plane_count == 0:
+            messagebox.showwarning(
+                "No planes found",
+                "The loaded dataset contains no planes to convert."
+            )
+            return
+
+        # Create a new dataset without modifying the original data.
+        converted_data = []
+
+        for item in self.data:
+            converted_item = item.copy()
+
+            if item["type"] == "S":
+                dipdir = float(item["azimuth"])
+                dip = float(item["inclination"])
+
+                converted_item["type"] = "L"
+                converted_item["azimuth"] = (dipdir + 180.0) % 360.0
+                converted_item["inclination"] = 90.0 - dip
+
+            converted_data.append(converted_item)
+        
+
+        # Ask the user where to save the converted dataset.
+        file_path = filedialog.asksaveasfilename(
+            title="Save converted poles",
+            initialfile=f"{Path(self.current_file).stem}-poles.tsv",
+            defaultextension=".tsv",
+            filetypes=[
+                ("Tab-separated files", "*.tsv"),
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ]
+        )
+
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, "w", encoding="utf-8", newline="") as file:
+                for item in converted_data:
+                    file.write(
+                        f'{item["id"]}\t'
+                        f'{item["type"]}\t'
+                        f'{item["azimuth"]:.1f}\t'
+                        f'{item["inclination"]:.1f}\t'
+                        f'{item["comment"]}\n'
+                    )
+
+            messagebox.showinfo(
+                "Conversion complete",
+                f"Converted {plane_count} planes to poles.\n\n"
+                f"Output file:\n{file_path}"
+            )
+
+        except OSError as e:
+            messagebox.showerror(
+                "Save error",
+                f"Unable to save the converted data:\n{e}"
+            )
 
 
 # Statistics dialog methods

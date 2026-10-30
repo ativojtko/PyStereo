@@ -1,4 +1,4 @@
-#TODO: refactoring, this is a copy of the contour plot in the stereonet, but it should be more general and not rely on the stereonet data structure
+#TODO: refactoring, improve code quality, add type hints, add docstrings, add unit tests and GUI for settings
 from dataclasses import dataclass
 
 
@@ -7,7 +7,7 @@ class ContourSettings:
     # ---- contour appearance ----
     cmap: str = "binary"
     alpha: float = 1.0
-    levels: int = 9
+    levels: int = 8
 
     # ---- contour lines ----
     show_lines: bool = False
@@ -23,6 +23,9 @@ class ContourSettings:
 
     # ---- density method ----
     measurement: str = "lines"
+    method: str = "exponential_kamb"
+    sigma: float = 3.0
+    gridsize: int = 100
 
 
 class ContourPlot:
@@ -30,7 +33,8 @@ class ContourPlot:
         self.ax = ax
         self.data = data
         self.settings = (
-            settings if settings else ContourSettings()
+            settings if settings is not None
+            else ContourSettings()
         )
 
     def draw(self):
@@ -40,42 +44,58 @@ class ContourPlot:
         # Extract lineation data
         for item in self.data:
             if item["type"] == "L":
-                plunges.append(item["dip"])
+                plunges.append(item["inclination"])
                 bearings.append(item["azimuth"])
 
         # Nothing to plot
         if not plunges:
             return
 
+        settings = self.settings
+
+        # Density calculation parameters
+        density_kwargs = {
+            "measurement": settings.measurement,
+            "levels": settings.levels,
+        }
+
+        # Method-specific parameters
+        if settings.method == "schmidt":
+            density_kwargs["method"] = "schmidt"
+        else:
+            density_kwargs.update({
+                "method": settings.method,
+                "sigma": settings.sigma,
+                "gridsize": settings.gridsize,
+            })
+
         # Filled density contours
         self.ax.density_contourf(
             plunges,
             bearings,
-            measurement=self.settings.measurement,
-            levels=self.settings.levels,
-            cmap=self.settings.cmap,
-            alpha=self.settings.alpha
+            cmap=settings.cmap,
+            alpha=settings.alpha,
+            **density_kwargs,
         )
 
         # Optional contour lines
-        if self.settings.show_lines:
+        if settings.show_lines:
             self.ax.density_contour(
                 plunges,
                 bearings,
-                measurement=self.settings.measurement,
-                levels=self.settings.levels,
-                colors=self.settings.linecolor,
-                linewidths=self.settings.linewidth,
-                linestyles=self.settings.linestyle
+                colors=settings.linecolor,
+                linewidths=settings.linewidth,
+                linestyles=settings.linestyle,
+                **density_kwargs,
             )
 
         # Optional original data points
-        if self.settings.show_points:
+        if settings.show_points:
             self.ax.line(
                 plunges,
                 bearings,
-                color=self.settings.point_color,
-                marker=self.settings.point_marker,
-                linestyle='None',
-                markersize=self.settings.point_size
+                color=settings.point_color,
+                marker=settings.point_marker,
+                linestyle="None",
+                markersize=settings.point_size,
             )

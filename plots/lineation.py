@@ -20,10 +20,10 @@ class LineationPlot:
 
     def draw(self, item, legend=False):
         azimuth = item["azimuth"]
-        dip = item["dip"]
+        inclination = item["inclination"]
 
         obj, = self.ax.line(
-            dip,
+            inclination,
             azimuth,
             **asdict(self.settings)
         )

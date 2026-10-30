@@ -49,7 +49,7 @@ class StereonetProjection:
 
             dataset = i["id"]
             azimuth = i["azimuth"]
-            dip = i["dip"]
+            inclination = i["inclination"]
             comment = i["comment"]
 
             if typ == "L":
@@ -65,7 +65,7 @@ class StereonetProjection:
             self.plots.append((
                 obj,
                 typ,
-                f"{typ}{dataset}={azimuth}/{dip}°"
+                f"{typ}{dataset}={azimuth}/{inclination}°"
             ))
 
         self.ax.grid()

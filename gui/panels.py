@@ -9,7 +9,7 @@ class DataPanel(tk.Frame):
         super().__init__(parent)
         self.app = app
 
-        columns = ("id", "type", "azimuth", "dip", "comment")
+        columns = ("id", "type", "azimuth", "inclination", "comment")
 
         # Kontajner pre tabuľku a scrollbary
         table_frame = tk.Frame(self)
@@ -38,14 +38,14 @@ class DataPanel(tk.Frame):
         self.tree.heading("id", text="ID")
         self.tree.heading("type", text="Type")
         self.tree.heading("azimuth", text="Azimuth")
-        self.tree.heading("dip", text="Dip")
+        self.tree.heading("inclination", text="Inclination")
         self.tree.heading("comment", text="Comment", anchor="w")
 
         # Stĺpce
         self.tree.column("id", width=40, minwidth=40, stretch=tk.NO, anchor="center")
         self.tree.column("type", width=60, minwidth=60, stretch=tk.NO, anchor="center")
         self.tree.column("azimuth", width=70, minwidth=60, stretch=tk.NO, anchor="e")
-        self.tree.column("dip", width=70, minwidth=60, stretch=tk.NO, anchor="e")
+        self.tree.column("inclination", width=70, minwidth=60, stretch=tk.NO, anchor="e")
         self.tree.column("comment", width=125, minwidth=100, stretch=tk.YES, anchor="w")
 
         # Rozloženie cez grid
@@ -72,7 +72,7 @@ class DataPanel(tk.Frame):
                     row["id"],
                     row["type"],
                     row["azimuth"],
-                    row["dip"],
+                    row["inclination"],
                     row["comment"]
                 )
             )
