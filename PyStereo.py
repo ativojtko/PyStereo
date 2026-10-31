@@ -10,7 +10,7 @@ from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSet
 from gui.panels import DataPanel, PlotPanel
 
 
-__VERSION__ = "0.21.0"
+__VERSION__ = "0.21.1"
 __AUTHOR__ = ("Hana Balažovjechová", \
               "Rastislav Vojtko", \
               "Miroslav Zverka", \
@@ -19,7 +19,7 @@ __AUTHOR__ = ("Hana Balažovjechová", \
 
 __LOCATION__ = "https://github.com/ativojtko/PyStereo"
 
-__DATE__ = '2026-10-14'
+__DATE__ = '2026-10-31'
 
 __LICENSE__ = """MIT License
 

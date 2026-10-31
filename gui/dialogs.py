@@ -8,7 +8,7 @@ class LineationSettingsDialog(tk.Toplevel):
 
         self.app = app
         self.title("Lineation Settings")
-        self.geometry("350x450")
+        self.geometry("400x400")
         self.resizable(False, False)
 
         self.transient(parent)
@@ -26,60 +26,130 @@ class LineationSettingsDialog(tk.Toplevel):
         self._build_ui()
 
     def _build_ui(self):
-        ttk.Label(self, text="Marker").pack(pady=5)
-        ttk.Combobox(
-            self,
-            textvariable=self.marker_var,
-            values=["o", "^", "s", "x", "d"]
-        ).pack()
+        main_frame = ttk.Frame(self, padding=15)
+        main_frame.pack(fill="both", expand=True)
 
-        ttk.Label(self, text="Size").pack(pady=5)
+        # --- Appearance Frame ---
+        app_frame = ttk.LabelFrame(main_frame, text=" Marker Style ", padding=12)
+        app_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(app_frame, text="Marker:").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Combobox(
+            app_frame,
+            textvariable=self.marker_var,
+            values=["o", "^", "s", "x", "d"],
+            width=15,
+            state="readonly"
+        ).grid(row=0, column=1, sticky="ew", pady=5)
+
+        ttk.Label(app_frame, text="Size:").grid(row=1, column=0, sticky="w", pady=5)
+        size_frame = ttk.Frame(app_frame)
+        size_frame.grid(row=1, column=1, sticky="ew", pady=5)
         ttk.Scale(
-            self,
+            size_frame,
             from_=2,
             to=20,
             variable=self.size_var,
             orient="horizontal"
-        ).pack(fill="x", padx=20)
+        ).pack(side="left", fill="x", expand=True)
+        self.size_label = ttk.Label(size_frame, text="", width=4)
+        self.size_label.pack(side="right", padx=(5, 0))
+        self.size_var.trace_add("write", lambda *_: self.size_label.configure(text=f"{self.size_var.get():.0f}"))
+        self.size_label.configure(text=f"{self.size_var.get():.0f}")
 
-        ttk.Label(self, text="Colour").pack(pady=5)
-        ttk.Entry(self, textvariable=self.color_var).pack()
+        ttk.Label(app_frame, text="Colour:").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Entry(app_frame, textvariable=self.color_var, width=18).grid(row=2, column=1, sticky="ew", pady=5)
 
-        ttk.Label(self, text="Alpha").pack(pady=5)
+        app_frame.columnconfigure(1, weight=1)
 
+        # --- Edge & Transparency Frame ---
+        edge_frame = ttk.LabelFrame(main_frame, text=" Outline & Transparency ", padding=12)
+        edge_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(edge_frame, text="Alpha:").grid(row=0, column=0, sticky="w", pady=5)
+        alpha_frame = ttk.Frame(edge_frame)
+        alpha_frame.grid(row=0, column=1, sticky="ew", pady=5)
         ttk.Scale(
-            self,
+            alpha_frame,
             from_=0.1,
             to=1.0,
             variable=self.alpha_var,
             orient="horizontal"
-        ).pack(fill="x", padx=20)
+        ).pack(side="left", fill="x", expand=True)
+        self.alpha_label = ttk.Label(alpha_frame, text="", width=4)
+        self.alpha_label.pack(side="right", padx=(5, 0))
+        self.alpha_var.trace_add("write", lambda *_: self.alpha_label.configure(text=f"{self.alpha_var.get():.2f}"))
+        self.alpha_label.configure(text=f"{self.alpha_var.get():.2f}")
+                 
+                                           
+                
 
-        ttk.Label(self, text="Edge Colour").pack(pady=5)
+        ttk.Label(edge_frame, text="Edge Colour:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Entry(edge_frame, textvariable=self.edgecolor_var, width=18).grid(row=1, column=1, sticky="ew", pady=5)
 
-        ttk.Entry(
-            self,
-            textvariable=self.edgecolor_var
-        ).pack()
-
-        ttk.Label(self, text="Edge Width").pack(pady=5)
-
+        ttk.Label(edge_frame, text="Edge Width:").grid(row=2, column=0, sticky="w", pady=5)
+        width_frame = ttk.Frame(edge_frame)
+        width_frame.grid(row=2, column=1, sticky="ew", pady=5)
         ttk.Scale(
-            self,
+            width_frame,
             from_=0.0,
             to=5.0,
             variable=self.edgewidth_var,
             orient="horizontal"
-        ).pack(fill="x", padx=20)
+        ).pack(side="left", fill="x", expand=True)
+        self.ewidth_label = ttk.Label(width_frame, text="", width=4)
+        self.ewidth_label.pack(side="right", padx=(5, 0))
+        self.edgewidth_var.trace_add("write", lambda *_: self.ewidth_label.configure(text=f"{self.edgewidth_var.get():.1f}"))
+        self.ewidth_label.configure(text=f"{self.edgewidth_var.get():.1f}")
+
+        edge_frame.columnconfigure(1, weight=1)
+
+        # --- Buttons Frame (Defaults, Cancel, Apply, OK) ---
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill="x", pady=(5, 0))
+
+        # 1. Defaults vľavo
+        ttk.Button(
+            btn_frame,
+            text="Defaults",
+            command=self.restore_defaults,
+            width=9
+        ).pack(side="left")
+
+        # 2. OK, Apply a Cancel vpravo
+        ttk.Button(
+            btn_frame,
+            text="OK",
+            command=self.ok,
+            width=9
+        ).pack(side="right", padx=(5, 0))
 
         ttk.Button(
-            self,
+            btn_frame,
             text="Apply",
-            command=self.apply
-        ).pack(pady=20) 
+            command=self.on_apply,
+            width=9
+        ).pack(side="right", padx=(0, 0))
 
+        ttk.Button(
+            btn_frame,
+            text="Cancel",
+            command=self.cancel,
+            width=9
+        ).pack(side="right", padx=(0, 5))
 
-    def apply(self):
+    def restore_defaults(self):
+        # Vytvorí čerstvú inštanciu nastavení s defaultnými hodnotami z dataclassu
+        default_settings = type(self.app.lineation_settings)()
+
+        self.marker_var.set(default_settings.marker)
+        self.size_var.set(default_settings.markersize)
+        self.color_var.set(default_settings.color)
+        self.alpha_var.set(default_settings.alpha)
+        self.edgecolor_var.set(default_settings.markeredgecolor)
+        self.edgewidth_var.set(default_settings.markeredgewidth)
+
+    def on_apply(self):
         settings = self.app.lineation_settings
 
         settings.marker = self.marker_var.get()
@@ -92,6 +162,13 @@ class LineationSettingsDialog(tk.Toplevel):
         if self.app.data:
             self.app.plot_lineations()
 
+        return True
+
+    def ok(self):
+        if self.on_apply():
+            self.destroy()
+
+    def cancel(self):
         self.destroy()
 
 
