@@ -80,9 +80,6 @@ class LineationSettingsDialog(tk.Toplevel):
         self.alpha_label.pack(side="right", padx=(5, 0))
         self.alpha_var.trace_add("write", lambda *_: self.alpha_label.configure(text=f"{self.alpha_var.get():.2f}"))
         self.alpha_label.configure(text=f"{self.alpha_var.get():.2f}")
-                 
-                                           
-                
 
         ttk.Label(edge_frame, text="Edge Colour:").grid(row=1, column=0, sticky="w", pady=5)
         ttk.Entry(edge_frame, textvariable=self.edgecolor_var, width=18).grid(row=1, column=1, sticky="ew", pady=5)
@@ -177,9 +174,8 @@ class PlaneSettingsDialog(tk.Toplevel):
         super().__init__(parent)
 
         self.app = app
-
         self.title("Plane Settings")
-        self.geometry("350x350")
+        self.geometry("400x320")
         self.resizable(False, False)
 
         self.transient(parent)
@@ -196,70 +192,133 @@ class PlaneSettingsDialog(tk.Toplevel):
         self._build_ui()
 
     def _build_ui(self):
-        ttk.Label(self, text="Colour").pack(pady=5)
+        main_frame = ttk.Frame(self, padding=15)
+        main_frame.pack(fill="both", expand=True)
 
-        ttk.Entry(
-            self,
-            textvariable=self.color_var
-        ).pack()
+        frame = ttk.LabelFrame(main_frame, text=" Plane Rendering ", padding=12)
+        frame.pack(fill="x", pady=(0, 10))
 
-        ttk.Label(self, text="Line Width").pack(pady=5)
+        ttk.Label(frame, text="Colour:").grid(row=0, column=0, sticky="w", pady=6)
+        ttk.Entry(frame, textvariable=self.color_var, width=18).grid(row=0, column=1, sticky="ew", pady=6)
 
+        ttk.Label(frame, text="Line Style:").grid(row=1, column=0, sticky="w", pady=6)
+        ttk.Combobox(
+            frame,
+            textvariable=self.linestyle_var,
+            values=["-", "--", "-.", ":"],
+            state="readonly",
+            width=15
+        ).grid(row=1, column=1, sticky="ew", pady=6)
+
+        ttk.Label(frame, text="Line Width:").grid(row=2, column=0, sticky="w", pady=6)
+        lw_frame = ttk.Frame(frame)
+        lw_frame.grid(row=2, column=1, sticky="ew", pady=6)
         ttk.Scale(
-            self,
+            lw_frame,
             from_=0.5,
             to=5.0,
             variable=self.linewidth_var,
             orient="horizontal"
-        ).pack(fill="x", padx=20)
+        ).pack(side="left", fill="x", expand=True)
+        self.lw_label = ttk.Label(lw_frame, text="", width=4)
+        self.lw_label.pack(side="right", padx=(5, 0))
+        self.linewidth_var.trace_add("write", lambda *_: self.lw_label.configure(text=f"{self.linewidth_var.get():.1f}"))
+        self.lw_label.configure(text=f"{self.linewidth_var.get():.1f}")
 
-        ttk.Label(self, text="Line Style").pack(pady=5)
-
-        ttk.Combobox(
-            self,
-            textvariable=self.linestyle_var,
-            values=["-", "--", "-.", ":"],
-            state="readonly"
-        ).pack()
-
-        ttk.Label(self, text="Alpha").pack(pady=5)
-
+        ttk.Label(frame, text="Alpha:").grid(row=3, column=0, sticky="w", pady=6)
+        alpha_frame = ttk.Frame(frame)
+        alpha_frame.grid(row=3, column=1, sticky="ew", pady=6)
         ttk.Scale(
-            self,
+            alpha_frame,
             from_=0.1,
             to=1.0,
             variable=self.alpha_var,
             orient="horizontal"
-        ).pack(fill="x", padx=20)
+        ).pack(side="left", fill="x", expand=True)
+        self.alpha_label = ttk.Label(alpha_frame, text="", width=4)
+        self.alpha_label.pack(side="right", padx=(5, 0))
+        self.alpha_var.trace_add("write", lambda *_: self.alpha_label.configure(text=f"{self.alpha_var.get():.2f}"))
+        self.alpha_label.configure(text=f"{self.alpha_var.get():.2f}")
 
-        ttk.Label(self, text="Segments").pack(pady=5)
-
+        ttk.Label(frame, text="Segments:").grid(row=4, column=0, sticky="w", pady=6)
+        seg_frame = ttk.Frame(frame)
+        seg_frame.grid(row=4, column=1, sticky="ew", pady=6)
         ttk.Scale(
-            self,
+            seg_frame,
             from_=10,
             to=200,
             variable=self.segments_var,
             orient="horizontal"
-        ).pack(fill="x", padx=20)
+        ).pack(side="left", fill="x", expand=True)
+        self.seg_label = ttk.Label(seg_frame, text="", width=4)
+        self.seg_label.pack(side="right", padx=(5, 0))
+        self.segments_var.trace_add("write", lambda *_: self.seg_label.configure(text=f"{int(self.segments_var.get())}"))
+        self.seg_label.configure(text=f"{int(self.segments_var.get())}")
+
+        frame.columnconfigure(1, weight=1)
+
+        # --- Buttons Frame (Defaults, Cancel, Apply, OK) ---
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill="x", pady=(5, 0))
+
+        # 1. Defaults vľavo
+        ttk.Button(
+            btn_frame,
+            text="Defaults",
+            command=self.restore_defaults,
+            width=9
+        ).pack(side="left")
+
+        # 2. OK, Apply a Cancel vpravo
+        ttk.Button(
+            btn_frame,
+            text="OK",
+            command=self.ok,
+            width=9
+        ).pack(side="right", padx=(5, 0))
 
         ttk.Button(
-            self,
+            btn_frame,
             text="Apply",
-            command=self.apply
-        ).pack(pady=20)
+            command=self.on_apply,
+            width=9
+        ).pack(side="right", padx=(0, 0))
 
-    def apply(self):
+        ttk.Button(
+            btn_frame,
+            text="Cancel",
+            command=self.cancel,
+            width=9
+        ).pack(side="right", padx=(0, 5))
+
+    def restore_defaults(self):
+        default_settings = type(self.app.plane_settings)()
+
+        self.color_var.set(default_settings.color)
+        self.linewidth_var.set(default_settings.linewidth)
+        self.linestyle_var.set(default_settings.linestyle)
+        self.alpha_var.set(default_settings.alpha)
+        self.segments_var.set(default_settings.segments)
+
+    def on_apply(self):
         settings = self.app.plane_settings
 
         settings.color = self.color_var.get()
         settings.linewidth = self.linewidth_var.get()
         settings.linestyle = self.linestyle_var.get()
         settings.alpha = self.alpha_var.get()
-        settings.segments = self.segments_var.get()
+        settings.segments = int(self.segments_var.get())
 
         if self.app.data:
             self.app.plot_great_circles()
 
+        return True
+
+    def ok(self):
+        if self.on_apply():
+            self.destroy()
+
+    def cancel(self):
         self.destroy()
 
 

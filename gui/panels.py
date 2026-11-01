@@ -4,6 +4,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from projection import StereonetProjection
 
+
 class DataPanel(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)

@@ -9,7 +9,7 @@ class LineationSettings:
     alpha: float = 1.0             # Priehľadnosť (0.0 = úplne priehľadné, 1.0 = nepriehľadné)
     markeredgecolor: str = "black" # Farba obrysu bodu
     markeredgewidth: float = 1.0   # Hrúbka obrysu
-    #label: str = "Lineation"       # Názov do legendy
+    #label: str = "Lineation"      # Názov do legendy
     picker: int = 6                # Tolerancia pre výber (v pixeloch)
 
 

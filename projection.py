@@ -62,10 +62,14 @@ class StereonetProjection:
                 obj = plane_plot.draw(i, legend=not legend_labels["S"])
                 legend_labels["S"] = True
 
+            label_text = f"{typ}{dataset} = {azimuth}/{inclination}°"
+            if comment:
+                label_text += f" ({comment})"
+
             self.plots.append((
                 obj,
                 typ,
-                f"{typ}{dataset}={azimuth}/{inclination}°"
+                label_text
             ))
 
         self.ax.grid()
@@ -91,9 +95,8 @@ class StereonetProjection:
                 obj.set_color('b')
                 obj.set_markersize(6)
             elif typ == "S":
-                obj.set_linewidth(2)
-                obj.set_color('g')
                 obj.set_linewidth(1)
+                obj.set_color('g')
             self.highlight = None
 
         if self.annot:
@@ -114,7 +117,7 @@ class StereonetProjection:
             if contains:
                 return  # klik bol na objekt → nič nerob
 
-        # Ak klik nebol na žiadny objekt, resetni výber
+        # Ak klik nebol na žiadny objekt, resetný výber
         self.reset_highlight()
 
 
@@ -137,10 +140,10 @@ class StereonetProjection:
 
                 # Zobraz popis
                 self.annot = self.ax.annotate(label,
-                                              xy=(1, 1), xycoords='axes fraction',
-                                              xytext=(10, -30), textcoords='offset points',
+                                              xy=(0, 0), xycoords='axes fraction',
+                                              xytext=(0, 0), textcoords='offset points',
                                               ha='left', va='top',
-                                              fontsize=10, color='black',
+                                              fontsize=8, color='black',
                                               bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='black'))
                 break
 
@@ -148,4 +151,4 @@ class StereonetProjection:
 
 
 if __name__ == "__main__":
-    print("This is a projection module. Run stereo.py to test.")
+    print("This is a projection module. Run PyStereo.py to test.")
