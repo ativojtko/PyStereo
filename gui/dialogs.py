@@ -334,9 +334,8 @@ class ContourSettingsDialog(tk.Toplevel):
         super().__init__(parent)
 
         self.app = app
-
         self.title("Contour Settings")
-        self.geometry("370x650")
+        self.geometry("400x480")
         self.resizable(False, False)
 
         self.transient(parent)
@@ -345,201 +344,305 @@ class ContourSettingsDialog(tk.Toplevel):
         settings = app.contour_settings
 
         self.cmap_var = tk.StringVar(value=settings.cmap)
-        self.levels_var = tk.IntVar(value=settings.levels)
+        
+        if isinstance(settings.levels, int):
+            level_mode = "Automatic"
+            levels_val = settings.levels
+            manual_levels_val = "1, 2, 3, 4"
+        else:
+            level_mode = "Manual"
+            levels_val = 5
+            manual_levels_val = ", ".join(str(x) for x in settings.levels)
+
+        self.levels_var = tk.IntVar(value=levels_val)
+        self.level_mode_var = tk.StringVar(value=level_mode)
+        self.manual_levels_var = tk.StringVar(value=manual_levels_val)
+        
         self.alpha_var = tk.DoubleVar(value=settings.alpha)
 
-        self.show_points_var = tk.BooleanVar(
-            value=settings.show_points
-        )
-        self.point_size_var = tk.DoubleVar(
-            value=settings.point_size
-        )
+        self.show_points_var = tk.BooleanVar(value=settings.show_points)
+        self.point_size_var = tk.DoubleVar(value=settings.point_size)
 
-        self.method_var = tk.StringVar(
-            value=self._method_label(settings.method)
-        )
+        self.method_var = tk.StringVar(value=self._method_label(settings.method))
         self.sigma_var = tk.DoubleVar(value=settings.sigma)
         self.gridsize_var = tk.IntVar(value=settings.gridsize)
 
         self._build_ui()
         self._update_sigma_state()
+        self._update_levels_mode()
 
     def _method_label(self, method):
         for label, value in self.DENSITY_METHODS.items():
             if value == method:
                 return label
-
         return "Exponential Kamb"
 
-    def _build_ui(self):
-        ttk.Label(self, text="Colour Map").pack(pady=(8, 3))
+    def _update_levels_mode(self, event=None):
+        if self.level_mode_var.get() == "Automatic":
+            self.manual_levels_frame.pack_forget()
+            self.automatic_levels_frame.pack(fill="x", pady=1)
+        else:
+            self.automatic_levels_frame.pack_forget()
+            self.manual_levels_frame.pack(fill="x", pady=1)
 
+    def _build_ui(self):
+        main_frame = ttk.Frame(self, padding=10)
+        main_frame.pack(fill="both", expand=True)
+
+        # --- Mapping & Density Frame ---
+        frame1 = ttk.LabelFrame(main_frame, text=" Density & Colourmap ", padding=6)
+        frame1.pack(fill="x", pady=(0, 6))
+
+        ttk.Label(frame1, text="Colour Map:").grid(row=0, column=0, sticky="w", pady=2)
         ttk.Combobox(
-            self,
+            frame1,
             textvariable=self.cmap_var,
             values=[
-                "Grays",
-                "binary",
-                "viridis",
-                "plasma",
-                "inferno",
-                "magma",
-                "jet",
-                "terrain",
-                "cividis",
-                "Reds",
+                "Grays", "binary", "viridis", "plasma", "inferno",
+                "magma", "jet", "terrain", "cividis", "Reds"
             ],
             state="readonly",
-        ).pack()
+            width=18
+        ).grid(row=0, column=1, sticky="ew", pady=2)
 
-        ttk.Label(self, text="Density Method").pack(pady=(10, 3))
-
+        ttk.Label(frame1, text="Density Method:").grid(row=1, column=0, sticky="w", pady=2)
         self.method_combo = ttk.Combobox(
-            self,
+            frame1,
             textvariable=self.method_var,
             values=list(self.DENSITY_METHODS.keys()),
             state="readonly",
+            width=18
         )
-        self.method_combo.pack()
-        self.method_combo.bind(
-            "<<ComboboxSelected>>",
-            self._update_sigma_state,
+        self.method_combo.grid(row=1, column=1, sticky="ew", pady=2)
+        self.method_combo.bind("<<ComboboxSelected>>", self._update_sigma_state)
+
+        frame1.columnconfigure(1, weight=1)
+
+        # --- Parameters Frame ---
+        frame2 = ttk.LabelFrame(main_frame, text=" Calculation Parameters ", padding=6)
+        frame2.pack(fill="x", pady=(0, 6))
+
+        ttk.Label(frame2, text="Contour Levels:").grid(row=0, column=0, sticky="w", pady=2)
+        self.level_mode_combo = ttk.Combobox(
+            frame2,
+            textvariable=self.level_mode_var,
+            values=["Automatic", "Manual"],
+            state="readonly",
+            width=18
         )
+        self.level_mode_combo.grid(row=0, column=1, sticky="ew", pady=2)
+        self.level_mode_combo.bind("<<ComboboxSelected>>", self._update_levels_mode)
 
-        ttk.Label(self, text="Contour Levels").pack(pady=(10, 3))
+        self.levels_container = ttk.Frame(frame2)
+        self.levels_container.grid(row=1, column=0, columnspan=2, sticky="ew", pady=2)
 
+        self.automatic_levels_frame = ttk.Frame(self.levels_container)
+        auto_scale_box = ttk.Frame(self.automatic_levels_frame)
+        auto_scale_box.pack(fill="x", expand=True)
         ttk.Scale(
-            self,
+            auto_scale_box,
             from_=3,
             to=30,
             variable=self.levels_var,
-            orient="horizontal",
-        ).pack(fill="x", padx=20)
+            orient="horizontal"
+        ).pack(side="left", fill="x", expand=True)
+        self.levels_label = ttk.Label(auto_scale_box, text="", width=4)
+        self.levels_label.pack(side="right", padx=(5, 0))
+        self.levels_var.trace_add("write", lambda *_: self.levels_label.configure(text=f"{int(self.levels_var.get())}"))
+        self.levels_label.configure(text=f"{int(self.levels_var.get())}")
 
-        self.levels_label = ttk.Label(self, text="")
-        self.levels_label.pack()
+        self.manual_levels_frame = ttk.Frame(self.levels_container)
+        ttk.Label(self.manual_levels_frame, text="Enter values separated by commas:", font=("", 9)).pack(anchor="w", pady=(0, 1))
+        ttk.Entry(self.manual_levels_frame, textvariable=self.manual_levels_var).pack(fill="x", pady=(0, 1))
+        self.levels_error_label = ttk.Label(self.manual_levels_frame, text="", foreground="red", font=("", 8))
+        self.levels_error_label.pack(anchor="w")
 
-        ttk.Label(self, text="Smoothing (sigma)").pack(
-            pady=(10, 3)
-        )
-
+        # Smoothing (sigma)
+        ttk.Label(frame2, text="Smoothing (sigma):").grid(row=2, column=0, sticky="w", pady=2)
+        sigma_box = ttk.Frame(frame2)
+        sigma_box.grid(row=2, column=1, sticky="ew", pady=2)
         self.sigma_scale = ttk.Scale(
-            self,
+            sigma_box,
             from_=1,
             to=5,
             variable=self.sigma_var,
-            orient="horizontal",
+            orient="horizontal"
         )
-        self.sigma_scale.pack(fill="x", padx=20)
+        self.sigma_scale.pack(side="left", fill="x", expand=True)
+        self.sigma_label = ttk.Label(sigma_box, text="", width=4)
+        self.sigma_label.pack(side="right", padx=(5, 0))
+        self.sigma_var.trace_add("write", lambda *_: self.sigma_label.configure(text=f"{self.sigma_var.get():.1f}"))
+        self.sigma_label.configure(text=f"{self.sigma_var.get():.1f}")
 
-        self.sigma_label = ttk.Label(self, text="")
-        self.sigma_label.pack()
-
-        ttk.Label(self, text="Grid Resolution").pack(
-            pady=(10, 3)
-        )
-
+        # Grid Resolution
+        ttk.Label(frame2, text="Grid Resolution:").grid(row=3, column=0, sticky="w", pady=2)
+        grid_box = ttk.Frame(frame2)
+        grid_box.grid(row=3, column=1, sticky="ew", pady=2)
         ttk.Scale(
-            self,
+            grid_box,
             from_=50,
             to=200,
             variable=self.gridsize_var,
-            orient="horizontal",
-        ).pack(fill="x", padx=20)
+            orient="horizontal"
+        ).pack(side="left", fill="x", expand=True)
+        self.gridsize_label = ttk.Label(grid_box, text="", width=4)
+        self.gridsize_label.pack(side="right", padx=(5, 0))
+        self.gridsize_var.trace_add("write", lambda *_: self.gridsize_label.configure(text=f"{int(self.gridsize_var.get())}"))
+        self.gridsize_label.configure(text=f"{int(self.gridsize_var.get())}")
 
-        self.gridsize_label = ttk.Label(self, text="")
-        self.gridsize_label.pack()
+        frame2.columnconfigure(1, weight=1)
 
-        self.gridsize_var.trace_add(
-            "write",
-            self._update_gridsize_label,
-        )
-        self.sigma_var.trace_add(
-            "write",
-            self._update_sigma_label,
-        )
-        self.levels_var.trace_add(
-            "write",
-            self._update_levels_label,
-        )
-        self._update_gridsize_label()
-        self._update_sigma_label()
-        self._update_levels_label()
+        # --- Display Options Frame ---
+        frame3 = ttk.LabelFrame(main_frame, text=" Overlay & Points ", padding=6)
+        frame3.pack(fill="x", pady=(0, 6))
 
-        ttk.Label(self, text="Alpha").pack(pady=(10, 3))
-
+        ttk.Label(frame3, text="Alpha:").grid(row=0, column=0, sticky="w", pady=2)
+        alpha_box = ttk.Frame(frame3)
+        alpha_box.grid(row=0, column=1, sticky="ew", pady=2)
         ttk.Scale(
-            self,
+            alpha_box,
             from_=0.1,
             to=1.0,
             variable=self.alpha_var,
-            orient="horizontal",
-        ).pack(fill="x", padx=20)
+            orient="horizontal"
+        ).pack(side="left", fill="x", expand=True)
+        self.alpha_label = ttk.Label(alpha_box, text="", width=4)
+        self.alpha_label.pack(side="right", padx=(5, 0))
+        self.alpha_var.trace_add("write", lambda *_: self.alpha_label.configure(text=f"{self.alpha_var.get():.2f}"))
+        self.alpha_label.configure(text=f"{self.alpha_var.get():.2f}")
 
         ttk.Checkbutton(
-            self,
+            frame3,
             text="Show Points",
-            variable=self.show_points_var,
-        ).pack(pady=(10, 3))
+            variable=self.show_points_var
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=2)
 
-        ttk.Label(self, text="Point Size").pack(pady=(5, 3))
-
+        ttk.Label(frame3, text="Point Size:").grid(row=2, column=0, sticky="w", pady=2)
+        pt_box = ttk.Frame(frame3)
+        pt_box.grid(row=2, column=1, sticky="ew", pady=2)
         ttk.Scale(
-            self,
+            pt_box,
             from_=1,
             to=10,
             variable=self.point_size_var,
-            orient="horizontal",
-        ).pack(fill="x", padx=20)
+            orient="horizontal"
+        ).pack(side="left", fill="x", expand=True)
+        self.pt_label = ttk.Label(pt_box, text="", width=4)
+        self.pt_label.pack(side="right", padx=(5, 0))
+        self.point_size_var.trace_add("write", lambda *_: self.pt_label.configure(text=f"{self.point_size_var.get():.1f}"))
+        self.pt_label.configure(text=f"{self.point_size_var.get():.1f}")
+
+        frame3.columnconfigure(1, weight=1)
+
+        # --- Buttons Frame (Defaults, Cancel, Apply, OK) ---
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill="x", pady=(4, 0))
+
+        # 1. Defaults vľavo
+        ttk.Button(
+            btn_frame,
+            text="Defaults",
+            command=self.restore_defaults,
+            width=9
+        ).pack(side="left")
+
+        # 2. OK, Apply a Cancel vpravo
+        ttk.Button(
+            btn_frame,
+            text="OK",
+            command=self.ok,
+            width=9
+        ).pack(side="right", padx=(5, 0))
 
         ttk.Button(
-            self,
+            btn_frame,
             text="Apply",
-            command=self.apply,
-        ).pack(pady=15)
+            command=self.on_apply,
+            width=9
+        ).pack(side="right", padx=(0, 0))
+
+        ttk.Button(
+            btn_frame,
+            text="Cancel",
+            command=self.cancel,
+            width=9
+        ).pack(side="right", padx=(0, 5))
 
     def _update_sigma_state(self, event=None):
-        method = self.DENSITY_METHODS.get(
-            self.method_var.get()
-        )
-
+        method = self.DENSITY_METHODS.get(self.method_var.get())
         if method in ("exponential_kamb", "linear_kamb", "kamb"):
             self.sigma_scale.configure(state="normal")
         else:
             self.sigma_scale.configure(state="disabled")
 
-    def _update_sigma_label(self, *args):
-        self.sigma_label.configure(
-            text=f"{self.sigma_var.get():.1f}"
-        )
+    def restore_defaults(self):
+        default_settings = type(self.app.contour_settings)()
 
-    def _update_gridsize_label(self, *args):
-        self.gridsize_label.configure(
-            text=f"{int(self.gridsize_var.get())}"
-        )
+        self.cmap_var.set(default_settings.cmap)
+        
+        if isinstance(default_settings.levels, int):
+            self.level_mode_var.set("Automatic")
+            self.levels_var.set(default_settings.levels)
+        else:
+            self.level_mode_var.set("Manual")
+            self.manual_levels_var.set(", ".join(str(x) for x in default_settings.levels))
+            
+        self._update_levels_mode()
 
-    def _update_levels_label(self, *args):
-        self.levels_label.configure(
-            text=f"{self.levels_var.get()}"
-        )
+        self.alpha_var.set(default_settings.alpha)
+        self.show_points_var.set(default_settings.show_points)
+        self.point_size_var.set(default_settings.point_size)
+        self.method_var.set(self._method_label(default_settings.method))
+        self.sigma_var.set(default_settings.sigma)
+        self.gridsize_var.set(default_settings.gridsize)
+        self._update_sigma_state()
+        self.levels_error_label.configure(text="")
 
-    def apply(self):
+    def on_apply(self):
         settings = self.app.contour_settings
 
-        settings.cmap = self.cmap_var.get()
-        settings.levels = int(self.levels_var.get())
-        settings.alpha = self.alpha_var.get()
+        if self.level_mode_var.get() == "Automatic":
+            levels = int(self.levels_var.get())
+        else:
+            try:
+                levels = [
+                    float(value.strip())
+                    for value in self.manual_levels_var.get().split(",")
+                    if value.strip()
+                ]
 
+                if len(levels) < 2:
+                    raise ValueError("Enter at least two contour levels.")
+
+                if not all(value == value and abs(value) != float("inf") for value in levels):
+                    raise ValueError("Levels must be finite numbers.")
+
+                if any(current >= following for current, following in zip(levels, levels[1:])):
+                    raise ValueError("Levels must be in ascending order.")
+
+            except ValueError as error:
+                self.levels_error_label.configure(text=str(error))
+                return False  # Chyba pri validácii, nezatvárame / neaplikujeme
+
+        self.levels_error_label.configure(text="")
+
+        settings.cmap = self.cmap_var.get()
+        settings.levels = levels
+        settings.alpha = self.alpha_var.get()
         settings.show_points = self.show_points_var.get()
         settings.point_size = self.point_size_var.get()
-
-        settings.method = self.DENSITY_METHODS[
-            self.method_var.get()
-        ]
+        settings.method = self.DENSITY_METHODS[self.method_var.get()]
         settings.sigma = self.sigma_var.get()
         settings.gridsize = int(self.gridsize_var.get())
 
         if self.app.data:
             self.app.plot_contours()
 
+        return True  # Úspešne aplikované
+
+    def ok(self):
+        if self.on_apply():
+            self.destroy()
+
+    def cancel(self):
         self.destroy()
