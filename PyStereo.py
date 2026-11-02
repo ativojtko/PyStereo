@@ -10,7 +10,7 @@ from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSet
 from gui.panels import DataPanel, PlotPanel
 
 
-__VERSION__ = "0.21.1"
+__VERSION__ = "0.21.3"
 __AUTHOR__ = ("Hana Balažovjechová", \
               "Rastislav Vojtko", \
               "Miroslav Zverka", \
@@ -19,7 +19,7 @@ __AUTHOR__ = ("Hana Balažovjechová", \
 
 __LOCATION__ = "https://github.com/ativojtko/PyStereo"
 
-__DATE__ = '2026-10-31'
+__DATE__ = '2026-11-02'
 
 __LICENSE__ = """MIT License
 
@@ -106,40 +106,41 @@ class StereoApp:
         and their respective options."""
         menubar = tk.Menu(self.root)
 
-        # File menu with Open, Close and Exit options
+        # File menu with Open, Close, Export Plot and Exit options
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Open", command=self.load_file)
-        file_menu.add_command(label="Close", command=self.close_data)
+        file_menu.add_command(label="Open", accelerator="Ctrl+O", command=self.load_file)
+        file_menu.add_command(label="Close", accelerator="Ctrl+W", command=self.close_data)
         file_menu.add_separator()
-        file_menu.add_command(label="Export Plot...", command=self.export_plot)
+        file_menu.add_command(label="Export Plot...", accelerator="Ctrl+E", command=self.export_plot)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.destroy)
+        file_menu.add_command(label="Exit", accelerator="Ctrl+Q", command=self.root.destroy)
         menubar.add_cascade(label="File", menu=file_menu)
 
-        # Plot menu with Lineations and Great circles options
+        # Plot menu
         plot_menu = tk.Menu(menubar, tearoff=0)
         plot_menu.add_command(label="Lineations", command=self.plot_lineations)
         plot_menu.add_command(label="Great circles", command=self.plot_great_circles)
         plot_menu.add_command(label="Combined Plot", command=self.plot_combined)
         plot_menu.add_separator()
         plot_menu.add_command(label="Contour Plot", command=self.plot_contours)
+        plot_menu.add_separator()
         plot_menu.add_command(label="Clear stereogram", command=self.plot_clear_stereogram)
         menubar.add_cascade(label="Plot", menu=plot_menu)
 
         # Calculations
         calculations_menu = tk.Menu(menubar, tearoff=0)
         calculations_menu.add_command(label="Planes to poles", command=self.planes_to_poles)
-        calculations_menu.add_command(label="Poles to planes", command=lambda: messagebox.showinfo("Poles to planes", "This feature is not yet implemented."))
-        calculations_menu.add_separator()
-        calculations_menu.add_command(label="Rotation...", command=lambda: messagebox.showinfo("Rotation around an arbitrary axis", "This feature is not yet implemented."))
+        calculations_menu.add_command(label="Poles to planes", command=self.poles_to_planes)
+        #calculations_menu.add_separator()
+        #calculations_menu.add_command(label="Rotation...", command=lambda: messagebox.showinfo("Rotation around an arbitrary axis", "This feature is not yet implemented."))
         menubar.add_cascade(label="Calculations", menu=calculations_menu)
 
         # Statistics
-        statistics_menu = tk.Menu(menubar, tearoff=0)
-        statistics_menu.add_command(label="Mean vector", command=lambda: messagebox.showinfo("Mean vector", "This feature is not yet implemented."))
-        statistics_menu.add_command(label="Fisher Distribution", command=lambda: messagebox.showinfo("Fisher Distribution", "This feature is not yet implemented."))
-        statistics_menu.add_command(label="Bingham Distribution", command=lambda: messagebox.showinfo("Bingham Distribution", "This feature is not yet implemented."))  # Disable the option for now
-        menubar.add_cascade(label="Statistics", menu=statistics_menu)
+        #statistics_menu = tk.Menu(menubar, tearoff=0)
+        #statistics_menu.add_command(label="Mean vector", command=lambda: messagebox.showinfo("Mean vector", "This feature is not yet implemented."))
+        #statistics_menu.add_command(label="Fisher Distribution", command=lambda: messagebox.showinfo("Fisher Distribution", "This feature is not yet implemented."))
+        #statistics_menu.add_command(label="Bingham Distribution", command=lambda: messagebox.showinfo("Bingham Distribution", "This feature is not yet implemented."))
+        #menubar.add_cascade(label="Statistics", menu=statistics_menu)
 
         # Settings menu with Lineation settings option
         settings_menu = tk.Menu(menubar, tearoff=0)
@@ -165,6 +166,17 @@ class StereoApp:
 
         # Configuration of the window to display this menu
         self.root.config(menu=menubar)
+
+        # Bindings
+        # Bindings for File menubar items
+        self.root.bind("<Control-o>", lambda event: self.load_file())
+        self.root.bind("<Control-O>", lambda event: self.load_file())
+        self.root.bind("<Control-w>", lambda event: self.close_data())
+        self.root.bind("<Control-W>", lambda event: self.close_data())
+        self.root.bind("<Control-e>", lambda event: self.export_plot())
+        self.root.bind("<Control-E>", lambda event: self.export_plot())
+        self.root.bind("<Control-q>", lambda event: self.root.destroy())
+        self.root.bind("<Control-Q>", lambda event: self.root.destroy())
 
 
     def load_file(self):
@@ -425,6 +437,82 @@ class StereoApp:
             messagebox.showinfo(
                 "Conversion complete",
                 f"Converted {plane_count} planes to poles.\n\n"
+                f"Output file:\n{file_path}"
+            )
+
+        except OSError as e:
+            messagebox.showerror(
+                "Save error",
+                f"Unable to save the converted data:\n{e}"
+            )
+
+
+    def poles_to_planes(self):
+        """Convert poles (L) to planes (S) and save them to a new file."""
+        if not self.data:
+            messagebox.showwarning(
+                "No data loaded",
+                "Please load a dataset first."
+            )
+            return
+
+        # Check whether the dataset contains any poles.
+        pole_count = sum(
+            item["type"] == "L" for item in self.data
+        )
+
+        if pole_count == 0:
+            messagebox.showwarning(
+                "No poles found",
+                "The loaded dataset contains no poles to convert."
+            )
+            return
+
+        # Create a new dataset without modifying the original data.
+        converted_data = []
+
+        for item in self.data:
+            converted_item = item.copy()
+
+            if item["type"] == "L":
+                trend = float(item["azimuth"])
+                plunge = float(item["inclination"])
+
+                converted_item["type"] = "S"
+                converted_item["azimuth"] = (trend + 180.0) % 360.0
+                converted_item["inclination"] = 90.0 - plunge
+
+            converted_data.append(converted_item)
+
+        # Ask the user where to save the converted dataset.
+        file_path = filedialog.asksaveasfilename(
+            title="Save converted planes",
+            initialfile=f"{Path(self.current_file).stem}-planes.tsv",
+            defaultextension=".tsv",
+            filetypes=[
+                ("Tab-separated files", "*.tsv"),
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ]
+        )
+
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, "w", encoding="utf-8", newline="") as file:
+                for item in converted_data:
+                    file.write(
+                        f'{item["id"]}\t'
+                        f'{item["type"]}\t'
+                        f'{item["azimuth"]:.1f}\t'
+                        f'{item["inclination"]:.1f}\t'
+                        f'{item["comment"]}\n'
+                    )
+
+            messagebox.showinfo(
+                "Conversion complete",
+                f"Converted {pole_count} poles to planes.\n\n"
                 f"Output file:\n{file_path}"
             )
 
