@@ -10,7 +10,7 @@ from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSet
 from gui.panels import DataPanel, PlotPanel
 
 
-__VERSION__ = "0.21.3"
+__VERSION__ = "0.22.0"
 __AUTHOR__ = ("Hana Balažovjechová", \
               "Rastislav Vojtko", \
               "Miroslav Zverka", \

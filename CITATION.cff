@@ -1,4 +1,4 @@
-cff-version: 0.21.3
+cff-version: 0.22.0
 message: "If you use this software, please cite it as below."
 authors:
   - family-names: "Blažovjechová"
@@ -13,7 +13,7 @@ authors:
   - family-names: "Zuzana"
     given-names: "Lahová"
 title: "PyStereo"
-version: "0.21.3"
+version: "0.22.0"
 date-released: 2026-11-02
 url: "https://github.com/ativojtko/PyStereo"
 keywords:
