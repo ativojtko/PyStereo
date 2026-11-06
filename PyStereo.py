@@ -3,14 +3,19 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from plots.lineation import LineationSettings
+from plots.pole import PoleSettings
 from plots.plane import PlaneSettings
 from plots.contour import ContourSettings
 from projection import StereonetProjection
-from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSettingsDialog
+from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSettingsDialog, RotationDialog
 from gui.panels import DataPanel, PlotPanel
+from file_io import write_data, read_data, write_plot
+import calculations
+
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
 
-__VERSION__ = "0.22.0"
+__VERSION__ = "0.23.0"
 __AUTHOR__ = ("Hana Balažovjechová", \
               "Rastislav Vojtko", \
               "Miroslav Zverka", \
@@ -19,7 +24,7 @@ __AUTHOR__ = ("Hana Balažovjechová", \
 
 __LOCATION__ = "https://github.com/ativojtko/PyStereo"
 
-__DATE__ = '2026-11-02'
+__DATE__ = '2026-11-06'
 
 __LICENSE__ = """MIT License
 
@@ -53,17 +58,18 @@ class StereoApp:
         # Nastavenie ikony aplikáce (Windows vs. ostatné platformy)
         if sys.platform.startswith("win"):
             try:
-                self.root.iconbitmap("stereo.ico")
+                self.root.iconbitmap(str(ASSETS_DIR / "stereo.ico"))
             except Exception:
                 pass
         else:
             try:
-                self.icon = tk.PhotoImage(file="stereo.png")
+                self.icon = tk.PhotoImage(file=str(ASSETS_DIR / "stereo.png"))
                 self.root.iconphoto(True, self.icon)
             except Exception:
                 pass
         
         self.lineation_settings = LineationSettings()
+        self.pole_settings = PoleSettings()
         self.plane_settings = PlaneSettings()
         self.contour_settings = ContourSettings()
 
@@ -118,12 +124,18 @@ class StereoApp:
 
         # Plot menu
         plot_menu = tk.Menu(menubar, tearoff=0)
-        plot_menu.add_command(label="Lineations", command=self.plot_lineations)
-        plot_menu.add_command(label="Great circles", command=self.plot_great_circles)
-        plot_menu.add_command(label="Combined Plot", command=self.plot_combined)
+        plot_menu.add_command(label="Lineations", command=lambda: self.plot_data("lineations"))
+        plot_menu.add_command(label="Poles", command=lambda: self.plot_data("poles"))
+        plot_menu.add_command(label="Great circles", command=lambda: self.plot_data("planes"))
+        plot_menu.add_command(label="Combined Plot",command=lambda: self.plot_data("all"))
         plot_menu.add_separator()
-        plot_menu.add_command(label="Contour Plot", command=self.plot_contours)
-        plot_menu.add_separator()
+
+        # Podmenu pre kontúrové diagramy
+        contour_menu = tk.Menu(plot_menu, tearoff=0)
+        plot_menu.add_cascade( label="Contour Plot", menu=contour_menu)  
+        contour_menu.add_command(label="Lineations", command=lambda: self.plot_data("contour_lineations"))
+        contour_menu.add_command(label="Poles", command=lambda: self.plot_data("contour_poles"))
+            
         plot_menu.add_command(label="Clear stereogram", command=self.plot_clear_stereogram)
         menubar.add_cascade(label="Plot", menu=plot_menu)
 
@@ -131,8 +143,8 @@ class StereoApp:
         calculations_menu = tk.Menu(menubar, tearoff=0)
         calculations_menu.add_command(label="Planes to poles", command=self.planes_to_poles)
         calculations_menu.add_command(label="Poles to planes", command=self.poles_to_planes)
-        #calculations_menu.add_separator()
-        #calculations_menu.add_command(label="Rotation...", command=lambda: messagebox.showinfo("Rotation around an arbitrary axis", "This feature is not yet implemented."))
+        calculations_menu.add_separator()
+        calculations_menu.add_command(label="Rotate Elements", command=self.rotation)
         menubar.add_cascade(label="Calculations", menu=calculations_menu)
 
         # Statistics
@@ -145,6 +157,7 @@ class StereoApp:
         # Settings menu with Lineation settings option
         settings_menu = tk.Menu(menubar, tearoff=0)
         settings_menu.add_command(label="Lineations", command=self.open_lineation_settings)
+        settings_menu.add_command(label="Poles",command=self.open_pole_settings)
         settings_menu.add_command(label="Planes", command=self.open_plane_settings)
         settings_menu.add_command(label="Contours", command=self.open_contour_settings)
         menubar.add_cascade(label="Settings", menu=settings_menu)
@@ -177,8 +190,7 @@ class StereoApp:
         self.root.bind("<Control-E>", lambda event: self.export_plot())
         self.root.bind("<Control-q>", lambda event: self.root.destroy())
         self.root.bind("<Control-Q>", lambda event: self.root.destroy())
-
-
+    
     def load_file(self):
         """Opens a file dialog to select a text file containing the 
         structural dataset. If a dataset is already loaded, prompts 
@@ -206,61 +218,47 @@ class StereoApp:
 
         if not path:
             return
-        
-        data = self.read_data(path)
-        self.set_data(data)
-
-        filename = Path(path).name
-        self.current_file = Path(path).name # toto treba doriesit
-        self.status_var.set(f" {filename} | {len(data)} records loaded")
-
-
-    def read_data(self, file_path):
-        """Reads a text file containing structural data and returns a list 
-        of dictionaries representing the data.
-        Each line in the file should contain the following tab-separated values:"""
-        data = []
+        # zmena, tu zavoláme nový modul file_io ktorý nahradi starnú metodu self.read_data(path)
+        # pribudol nový zoznam invalid rows ktorý uchova informáciu o chybných riadkoch
+        # prečistí starý graf
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.rstrip("\r\n")
-                    if not line:
-                        continue
+            data, invalid_rows = read_data(path)
+        except Exception as error:
+            messagebox.showerror("Error", f"Unable to read the file:\n{error}")
+            return
 
-                    parts = line.split("\t")
+        self.invalid_rows = invalid_rows
+        self.set_data(data)
+        self.plot_panel.clear()
+        self.current_file = Path(path).name
+        self.status_var.set(
+            f" {self.current_file} | {len(data)} records loaded"
+            f" | {len(invalid_rows)} invalid rows skipped"
+        )
 
+    # overíme si či meranie obsahuje požadované dáta 
+    def require_data(self, measurement_type=None):
+        if not self.data:
+            messagebox.showwarning(
+                "No data loaded",
+                "Please load a dataset first."
+            )
+            return False
 
-                    if len(parts) < 4:
-                        continue
+        if measurement_type is not None:
+            if not any(item["type"] == measurement_type for item in self.data):
+                messagebox.showwarning(
+                    "No measurements found",
+                    f"The dataset contains no measurements of type {measurement_type}."
+                )
+                return False
 
-                    comment = parts[4] if len(parts) > 4 else ""
-
-                    try:
-                        item = {
-                            "id": int(parts[0]),
-                            "type": parts[1],
-                            "azimuth": float(parts[2]),
-                            "inclination": float(parts[3]),
-                            "comment": comment
-                        }
-                        data.append(item)
-
-                    except ValueError:
-                        print(f"Skipping invalid line: {line}")
-                        print(e)
-                        continue
-        
-            print(f"Loaded {len(data)} records from {file_path}")
-            return data
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Unable to read the file:\n{e}")
-        return []
-
+        return True
+    
     def set_data(self, data):
         self.data = data
         self.data_panel.refresh(data)
-        self.data_loaded = True
+        self.data_loaded = bool(data) # zmena, nová funkcia read_data moze vratit aj prázdny zoznam data pri všetkých chybných riadkoch
 
     def dataset_selected(self, index):
         self.plot_panel.highlight(index)
@@ -277,11 +275,25 @@ class StereoApp:
         self.plot_panel.clear()
         self.status_var.set("No file loaded")
 
+    def save_file(self, file_path, writer, *args):
+        try:
+            writer(file_path, *args)
+        except Exception as error:
+            messagebox.showerror("Export error", str(error))
+            return False
+
+        messagebox.showinfo(
+            "Export",
+            f"File saved successfully:\n\n{file_path}"
+        )
+        return True
+
     def export_plot(self):
-        if not self.plot_panel.has_plots:
-            messagebox.showwarning("No plot exported",
-                                "Create a stereogram first."
-                    )
+        if self.plot_panel.current_mode is None:
+            messagebox.showwarning(
+                "No plot exported",
+                "Create a stereogram first."
+            )
             return
 
         file_path = filedialog.asksaveasfilename(
@@ -300,228 +312,82 @@ class StereoApp:
         if not file_path:
             return
 
-        try:
-            self.plot_panel.canvas.draw()
+        caption = (
+            f"PyStereo {__VERSION__}\n"
+            f"{self.current_file}\n"
+            f"n = {len(self.data)}\n"
+        )
+        return self.save_file(file_path, write_plot, self.plot_panel.fig, caption)
 
-            metadata = self.plot_panel.fig.text(
-                0.98, 0.02,
-                f"PyStereo {__VERSION__}\n"
-                f"{self.current_file}\n"
-                f"n = {len(self.data)}\n",
-                ha="right",
-                va="bottom",
-                fontsize=8,
-                color="gray"
-            )   
+    # Vyberie súbor a uloží pripravené merania so zvolenou presnosťou.
+    def export_data(self, data, name, decimal_places=2):
+        file_path = filedialog.asksaveasfilename(
+            title=f"Save {name}",
+            initialfile=f"{Path(self.current_file).stem}-{name}.tsv",
+            defaultextension=".tsv",
+            filetypes=[
+                ("Tab-separated files", "*.tsv"),
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ]
+        )
 
-            self.plot_panel.fig.savefig(
-                file_path,
-                dpi=300,
-                bbox_inches="tight",
-                facecolor="white"
-            )
+        if not file_path:
+            return False
 
-            metadata.remove()
+        return self.save_file(
+            file_path, write_data, data, decimal_places
+        )
+    
+    def confirm_data_change(self, action):
+        if not self.data:
+            return True
 
-            messagebox.showinfo(
-                "Export",
-                f"Stereogram exported successfully:\n\n{file_path}"
-            )
-
-        except Exception as e:
-            messagebox.showerror(
-                "Export error",
-                str(e)
-            )
-
+        return messagebox.askyesno(
+            f"{action} dataset",
+            f"{action} the current dataset?"
+        )
 # Plotting methods for lineations and great circles, and clearing the stereogram
-    def plot_lineations(self):
-        if not self.data:
-            messagebox.showwarning("No data loaded", "Please load a dataset first.")
-            return
-        
-        self.plot_panel.redraw(self.data, mode="lineations")
 
-    def plot_great_circles(self):
-        if not self.data:
-            messagebox.showwarning("No data loaded", "Please load a dataset first.")
-            return
-        
-        self.plot_panel.redraw(self.data, mode="planes")
-
-    def plot_combined(self):
-        if not self.data:
-            messagebox.showwarning("No data loaded", "Please load a dataset first.")
-            return
-
-        self.plot_panel.redraw(self.data, mode="all")
+# spojila som všetky funkcie plot do jednej, vždy sa urči podla mode co sa má zobrazit
+    def plot_data(self, mode="all"):
+        if self.require_data():
+            self.plot_panel.redraw(self.data, mode=mode)
 
     def plot_clear_stereogram(self):
         self.plot_panel.clear()
 
-    def plot_contours(self):
-        if not self.data:
-            messagebox.showwarning("No data loaded", "Please load a dataset first.")
-            return
-
-        self.plot_panel.redraw(self.data, mode="contours")
 
 
-# Calculations methods
+# Calculations dialog methods
+
+    # Prevedie plochy na póly a odovzdá výsledok na uloženie.
     def planes_to_poles(self):
-        """Convert planes (S) to poles (L) and save them to a new file."""
-
-        # If no self.data then message box warning
-        if not self.data:
-            messagebox.showwarning(
-                "No data loaded",
-                "Please load a dataset first."
-            )
+        if not self.require_data("S"):
             return
 
-        # Check whether the dataset contains any planes.
-        plane_count = sum(
-            item["type"] == "S" for item in self.data
-        )
+        data = calculations.convert_planes_to_poles(self.data)
+        return self.export_data(data, "poles")
 
-        if plane_count == 0:
-            messagebox.showwarning(
-                "No planes found",
-                "The loaded dataset contains no planes to convert."
-            )
-            return
-
-        # Create a new dataset without modifying the original data.
-        converted_data = []
-
-        for item in self.data:
-            converted_item = item.copy()
-
-            if item["type"] == "S":
-                dipdir = float(item["azimuth"])
-                dip = float(item["inclination"])
-
-                converted_item["type"] = "L"
-                converted_item["azimuth"] = (dipdir + 180.0) % 360.0
-                converted_item["inclination"] = 90.0 - dip
-
-            converted_data.append(converted_item)
-        
-
-        # Ask the user where to save the converted dataset.
-        file_path = filedialog.asksaveasfilename(
-            title="Save converted poles",
-            initialfile=f"{Path(self.current_file).stem}-poles.tsv",
-            defaultextension=".tsv",
-            filetypes=[
-                ("Tab-separated files", "*.tsv"),
-                ("Text files", "*.txt"),
-                ("All files", "*.*")
-            ]
-        )
-
-        if not file_path:
-            return
-
-        try:
-            with open(file_path, "w", encoding="utf-8", newline="") as file:
-                for item in converted_data:
-                    file.write(
-                        f'{item["id"]}\t'
-                        f'{item["type"]}\t'
-                        f'{item["azimuth"]:.1f}\t'
-                        f'{item["inclination"]:.1f}\t'
-                        f'{item["comment"]}\n'
-                    )
-
-            messagebox.showinfo(
-                "Conversion complete",
-                f"Converted {plane_count} planes to poles.\n\n"
-                f"Output file:\n{file_path}"
-            )
-
-        except OSError as e:
-            messagebox.showerror(
-                "Save error",
-                f"Unable to save the converted data:\n{e}"
-            )
-
-
+    # Prevedie póly na plochy a odovzdá výsledok na uloženie.
     def poles_to_planes(self):
-        """Convert poles (L) to planes (S) and save them to a new file."""
-        if not self.data:
-            messagebox.showwarning(
-                "No data loaded",
-                "Please load a dataset first."
-            )
+        if not self.require_data("P"):
             return
 
-        # Check whether the dataset contains any poles.
-        pole_count = sum(
-            item["type"] == "L" for item in self.data
-        )
+        data = calculations.convert_poles_to_planes(self.data)
+        return self.export_data(data, "planes")
 
-        if pole_count == 0:
-            messagebox.showwarning(
-                "No poles found",
-                "The loaded dataset contains no poles to convert."
-            )
-            return
+    # Bez hodnôt otvorí dialóg, so zadanými hodnotami otočí merania a exportuje ich.
+    def rotation(self, angle=None, axis=None, decimal_places=2):
+        if not self.require_data():
+            return False
 
-        # Create a new dataset without modifying the original data.
-        converted_data = []
+        if angle is None:
+            RotationDialog(self.root, self)
+            return False
 
-        for item in self.data:
-            converted_item = item.copy()
-
-            if item["type"] == "L":
-                trend = float(item["azimuth"])
-                plunge = float(item["inclination"])
-
-                converted_item["type"] = "S"
-                converted_item["azimuth"] = (trend + 180.0) % 360.0
-                converted_item["inclination"] = 90.0 - plunge
-
-            converted_data.append(converted_item)
-
-        # Ask the user where to save the converted dataset.
-        file_path = filedialog.asksaveasfilename(
-            title="Save converted planes",
-            initialfile=f"{Path(self.current_file).stem}-planes.tsv",
-            defaultextension=".tsv",
-            filetypes=[
-                ("Tab-separated files", "*.tsv"),
-                ("Text files", "*.txt"),
-                ("All files", "*.*")
-            ]
-        )
-
-        if not file_path:
-            return
-
-        try:
-            with open(file_path, "w", encoding="utf-8", newline="") as file:
-                for item in converted_data:
-                    file.write(
-                        f'{item["id"]}\t'
-                        f'{item["type"]}\t'
-                        f'{item["azimuth"]:.1f}\t'
-                        f'{item["inclination"]:.1f}\t'
-                        f'{item["comment"]}\n'
-                    )
-
-            messagebox.showinfo(
-                "Conversion complete",
-                f"Converted {pole_count} poles to planes.\n\n"
-                f"Output file:\n{file_path}"
-            )
-
-        except OSError as e:
-            messagebox.showerror(
-                "Save error",
-                f"Unable to save the converted data:\n{e}"
-            )
-
+        data = calculations.rotate_dataset(self.data, angle, axis)
+        return self.export_data(data, "rotated", decimal_places)
 
 # Statistics dialog methods
     def fisher_distribution(self):
@@ -534,6 +400,9 @@ class StereoApp:
 
     def open_plane_settings(self):
         PlaneSettingsDialog(self.root, self)
+
+    def open_pole_settings(self):
+        LineationSettingsDialog(self.root,self,settings=self.pole_settings,title="Pole Settings")
 
     def open_contour_settings(self):
         ContourSettingsDialog(self.root, self)

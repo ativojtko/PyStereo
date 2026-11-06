@@ -1,0 +1,31 @@
+from dataclasses import dataclass, asdict
+
+
+@dataclass
+class PoleSettings:
+    marker: str = "o"              # Tvar bodu (o = krúžok, ^ = trojuholník, s = štvorec)
+    markersize: float = 7.0        # Veľkosť bodu
+    color: str = "green"             # Farba
+    alpha: float = 1.0             # Priehľadnosť (0.0 = úplne priehľadné, 1.0 = nepriehľadné)
+    markeredgecolor: str = "black" # Farba obrysu bodu
+    markeredgewidth: float = 1.0   # Hrúbka obrysu
+    #label: str = "Lineation"      # Názov do legendy
+    picker: int = 6                # Tolerancia pre výber (v pixeloch)
+
+
+class PolePlot:
+    def __init__(self, ax, settings=None):
+        self.ax = ax
+        self.settings = settings if settings is not None else PoleSettings()
+
+    def draw(self, item, legend=False):
+        azimuth = item["azimuth"]
+        inclination = item["inclination"]
+
+        obj, = self.ax.line(
+            inclination,
+            azimuth,
+            **asdict(self.settings)
+        )
+
+        return obj

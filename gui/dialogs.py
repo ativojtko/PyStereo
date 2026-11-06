@@ -1,20 +1,22 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
-
+# zmena: pirdali sme dalsie parametre settings, title, a mode
 class LineationSettingsDialog(tk.Toplevel):
-    def __init__(self, parent, app):
+    def __init__(self, parent, app, settings=None, title="Lineation Settings"):
         super().__init__(parent)
 
         self.app = app
-        self.title("Lineation Settings")
+        # ak sme dialogu odovzdalib nastavenia, tak ich použije, inak pracuje s lineation settings
+        self.settings = settings if settings is not None else app.lineation_settings 
+        self.title(title)
         self.geometry("400x400")
         self.resizable(False, False)
 
         self.transient(parent)
         self.grab_set()
 
-        settings = app.lineation_settings
+        settings = self.settings
 
         self.marker_var = tk.StringVar(value=settings.marker)
         self.size_var = tk.DoubleVar(value=settings.markersize)
@@ -137,7 +139,7 @@ class LineationSettingsDialog(tk.Toplevel):
 
     def restore_defaults(self):
         # Vytvorí čerstvú inštanciu nastavení s defaultnými hodnotami z dataclassu
-        default_settings = type(self.app.lineation_settings)()
+        default_settings = type(self.settings)()
 
         self.marker_var.set(default_settings.marker)
         self.size_var.set(default_settings.markersize)
@@ -147,7 +149,7 @@ class LineationSettingsDialog(tk.Toplevel):
         self.edgewidth_var.set(default_settings.markeredgewidth)
 
     def on_apply(self):
-        settings = self.app.lineation_settings
+        settings = self.settings
 
         settings.marker = self.marker_var.get()
         settings.markersize = self.size_var.get()
@@ -156,8 +158,12 @@ class LineationSettingsDialog(tk.Toplevel):
         settings.markeredgecolor = self.edgecolor_var.get()
         settings.markeredgewidth = self.edgewidth_var.get()
 
-        if self.app.data:
-            self.app.plot_lineations()
+        # tato podmienka zabezpečí to aby sa po uloženi nastavenia prekreslil iba aktualne zobrzaeny typ merania
+        if self.app.plot_panel.current_mode is not None:
+            self.app.plot_panel.redraw(
+                self.app.data,
+                mode=self.app.plot_panel.current_mode
+            )
 
         return True
 
@@ -309,8 +315,11 @@ class PlaneSettingsDialog(tk.Toplevel):
         settings.alpha = self.alpha_var.get()
         settings.segments = int(self.segments_var.get())
 
-        if self.app.data:
-            self.app.plot_great_circles()
+        if self.app.plot_panel.current_mode is not None:
+            self.app.plot_panel.redraw(
+                self.app.data,
+                mode=self.app.plot_panel.current_mode
+            )
 
         return True
 
@@ -464,7 +473,7 @@ class ContourSettingsDialog(tk.Toplevel):
         self.sigma_scale = ttk.Scale(
             sigma_box,
             from_=1,
-            to=5,
+            to=10,
             variable=self.sigma_var,
             orient="horizontal"
         )
@@ -523,7 +532,7 @@ class ContourSettingsDialog(tk.Toplevel):
         ttk.Scale(
             pt_box,
             from_=1,
-            to=10,
+            to=20,
             variable=self.point_size_var,
             orient="horizontal"
         ).pack(side="left", fill="x", expand=True)
@@ -635,13 +644,143 @@ class ContourSettingsDialog(tk.Toplevel):
         settings.sigma = self.sigma_var.get()
         settings.gridsize = int(self.gridsize_var.get())
 
-        if self.app.data:
-            self.app.plot_contours()
-
+        if self.app.plot_panel.current_mode is not None:
+            self.app.plot_panel.redraw(
+                self.app.data,
+                mode=self.app.plot_panel.current_mode
+            )
         return True  # Úspešne aplikované
 
     def ok(self):
         if self.on_apply():
+            self.destroy()
+
+    def cancel(self):
+        self.destroy()
+
+
+# Enter the rotation axis and angle
+class RotationDialog(tk.Toplevel):
+    def __init__(self, parent, app, title="Rotate Structural Elements"):
+        super().__init__(parent)
+
+        self.app = app
+        self.title(title)
+        self.geometry("360x320")
+        self.resizable(False, False)
+
+        self.transient(parent)
+        self.grab_set()
+
+        # Premenné
+        self.trend_axis_var = tk.DoubleVar(value=0.0)
+        self.plunge_axis_var = tk.DoubleVar(value=0.0)
+        self.rotation_angle_var = tk.DoubleVar(value=0.0)
+        self.decimal_places_var = tk.IntVar(value=2)
+
+        self._build_ui()
+        
+        # Ošetrenie zatvorenia okna cez krížik (X)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+    def _build_ui(self):
+        main_frame = ttk.Frame(self, padding=15)
+        main_frame.pack(fill="both", expand=True)
+
+        # --- Rotation Axis Frame ---
+        axis_frame = ttk.LabelFrame(main_frame, text=" Rotation Axis ", padding=12)
+        axis_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(axis_frame, text="Trend [°]:").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Entry(axis_frame, textvariable=self.trend_axis_var, width=18, justify="right").grid(row=0, column=1, sticky="ew", pady=5)
+
+        ttk.Label(axis_frame, text="Plunge [°]:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Entry(axis_frame, textvariable=self.plunge_axis_var, width=18, justify="right").grid(row=1, column=1, sticky="ew", pady=5)
+
+        axis_frame.columnconfigure(1, weight=1)
+
+        # --- Parameters Frame (Angle & Precision) ---
+        param_frame = ttk.LabelFrame(main_frame, text=" Parameters ", padding=12)
+        param_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(param_frame, text="Rotation Angle [°]:").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Entry(param_frame, textvariable=self.rotation_angle_var, width=18, justify="right").grid(row=0, column=1, sticky="ew", pady=5)
+
+        ttk.Label(param_frame, text="Decimal Places:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Combobox(
+            param_frame,
+            textvariable=self.decimal_places_var,
+            values=list(range(7)),
+            width=15,
+            state="readonly",
+            justify="right"
+        ).grid(row=1, column=1, sticky="ew", pady=5)
+
+        param_frame.columnconfigure(1, weight=1)
+
+        # --- Buttons Frame (Defaults, Cancel, Rotate & Export) ---
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill="x", pady=(5, 0))
+
+        # 1. Defaults vľavo (obnoví nulové hodnoty / štandard)
+        ttk.Button(
+            btn_frame,
+            text="Defaults",
+            command=self.restore_defaults,
+            width=9
+        ).pack(side="left")
+
+        # 2. Cancel a Rotate & Export vpravo
+        ttk.Button(
+            btn_frame,
+            text="Rotate & Export",
+            command=self.apply,
+            width=14
+        ).pack(side="right", padx=(5, 0))
+
+        ttk.Button(
+            btn_frame,
+            text="Cancel",
+            command=self.cancel,
+            width=9
+        ).pack(side="right", padx=(0, 0))
+
+    def restore_defaults(self):
+        self.trend_axis_var.set(0.0)
+        self.plunge_axis_var.set(0.0)
+        self.rotation_angle_var.set(0.0)
+        self.decimal_places_var.set(2)
+
+    def apply(self):
+        # Read numeric values from the input fields
+        try:
+            angle = self.rotation_angle_var.get()
+            axis = (
+                self.trend_axis_var.get(),
+                self.plunge_axis_var.get()
+            )
+        except (tk.TclError, ValueError):
+            messagebox.showerror(
+                "Invalid input",
+                "Enter numbers for the axis and rotation angle.",
+                parent=self
+            )
+            return
+
+        # Check the rotation axis
+        trend, plunge = axis
+
+        if not (0 <= trend < 360 and -90 <= plunge <= 90):
+            messagebox.showerror(
+                "Invalid axis",
+                "Axis trend must be in [0, 360).\n"
+                "Axis plunge must be in [-90, 90].",
+                parent=self
+            )
+            return
+
+        # Close only after a successful export
+        if self.app.rotation(angle, axis, self.decimal_places_var.get()):
             self.destroy()
 
     def cancel(self):

@@ -29,9 +29,10 @@ class ContourSettings:
 
 
 class ContourPlot:
-    def __init__(self, ax, data, settings=None):
+    def __init__(self, ax, data, mesurment_type, settings=None):
         self.ax = ax
         self.data = data
+        self.mesurment_type = mesurment_type
         self.settings = (
             settings if settings is not None
             else ContourSettings()
@@ -41,9 +42,9 @@ class ContourPlot:
         plunges = []
         bearings = []
 
-        # Extract lineation data
+        # Extract lineation or pole data
         for item in self.data:
-            if item["type"] == "L":
+            if item["type"] == self.mesurment_type:
                 plunges.append(item["inclination"])
                 bearings.append(item["azimuth"])
 

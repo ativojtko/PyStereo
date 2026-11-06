@@ -1,17 +1,17 @@
 import matplotlib.pyplot as plt
 import mplstereonet
-from plots import LineationPlot, PlanePlot, ContourPlot
+from plots import LineationPlot, PlanePlot, PolePlot, ContourPlot
 
 class StereonetProjection:
-    def __init__(self, ax, canvas, data, lineation_settings, plane_settings, contour_settings):
+    def __init__(self, ax, canvas, data, lineation_settings, pole_settings, plane_settings, contour_settings):
         self.ax = ax
         self.canvas = canvas
         self.data = data
         self.lineation_settings = lineation_settings
         self.plane_settings = plane_settings
         self.contour_settings = contour_settings
+        self.pole_settings = pole_settings
         self.plots = []     # uloženie (obj, údaje)
-        self.annot = None   # aktuálny textový label
         self.highlight = None  # zvýraznený objekt
 
         self.canvas.mpl_connect('pick_event', self.on_pick)
@@ -21,12 +21,16 @@ class StereonetProjection:
     def draw(self, mode="all"):
         # Clear old state
         self.plots = []
+        self.highlight = None
         self.ax.cla()
 
-        if mode == "contours":
+        if mode in ("contour_lineations", "contour_poles"):
+            mesurment_type = "P" if mode == "contour_poles" else "L"
+            
             contour_plot = ContourPlot(
                 self.ax,
                 self.data,
+                mesurment_type=mesurment_type,
                 settings=self.contour_settings
             )
 
@@ -36,41 +40,36 @@ class StereonetProjection:
             self.canvas.draw_idle()
             return
         
-        legend_labels = {"S": False, "L": False}
+        legend_labels = {"S": False, "L": False, "P": False}
 
-        for i in self.data:
-            typ = i["type"]
-            # FILTER LOGIKA
+        for index, item in enumerate(self.data):
+            typ = item["type"]
+            # FILTER LOGIKA, pridali sme póly
             if mode == "lineations" and typ != "L":
+                continue
+
+            if mode == "poles" and typ != "P":
                 continue
 
             if mode == "planes" and typ != "S":
                 continue
 
-            dataset = i["id"]
-            azimuth = i["azimuth"]
-            inclination = i["inclination"]
-            comment = i["comment"]
-
             if typ == "L":
                 lineation_plot = LineationPlot(self.ax, settings=self.lineation_settings)
-                obj = lineation_plot.draw(i, legend=not legend_labels["L"])
+                obj = lineation_plot.draw(item, legend=not legend_labels["L"])
                 legend_labels["L"] = True
+
+            elif typ == "P":
+                pole_plot = PolePlot(self.ax, settings=self.pole_settings)
+                obj = pole_plot.draw(item, legend=not legend_labels["P"])
+                legend_labels["P"] = True
 
             elif typ == "S":
                 plane_plot = PlanePlot(self.ax, settings=self.plane_settings)
-                obj = plane_plot.draw(i, legend=not legend_labels["S"])
+                obj = plane_plot.draw(item, legend=not legend_labels["S"])
                 legend_labels["S"] = True
 
-            label_text = f"{typ}{dataset} = {azimuth}/{inclination}°"
-            if comment:
-                label_text += f" ({comment})"
-
-            self.plots.append((
-                obj,
-                typ,
-                label_text
-            ))
+            self.plots.append((obj, typ, index))
 
         self.ax.grid()
 
@@ -87,24 +86,26 @@ class StereonetProjection:
 
 
     def reset_highlight(self):
-        #metóda na odznačenie objektu
-        if self.highlight:
-            obj, typ, _ = self.highlight 
-            if typ == "L":
-                obj.set_marker('o')
-                obj.set_color('b')
-                obj.set_markersize(6)
+        if self.highlight is not None:
+            obj, typ, _ = self.highlight
+
+            if typ in ("L", "P"):
+                settings = (
+                    self.lineation_settings
+                    if typ == "L"
+                    else self.pole_settings
+                    
+                )
+                obj.set_color(settings.color)
+                obj.set_markersize(settings.markersize)
+
             elif typ == "S":
-                obj.set_linewidth(1)
-                obj.set_color('g')
+                obj.set_color(self.plane_settings.color)
+                obj.set_linewidth(self.plane_settings.linewidth)
+
             self.highlight = None
 
-        if self.annot:
-            self.annot.remove()
-            self.annot = None
-
         self.canvas.draw_idle()
-
 
     def on_click_outside(self, event):
         if event.inaxes != self.ax:
@@ -120,34 +121,36 @@ class StereonetProjection:
         # Ak klik nebol na žiadny objekt, resetný výber
         self.reset_highlight()
 
+    def highlight_record(self, index):
+        self.reset_highlight()
+
+        for obj, typ, record_index in self.plots:
+            if record_index == index:
+                self.highlight = (obj, typ, record_index)
+                obj.set_color("red")
+
+                if typ == "L":
+                    obj.set_markersize(
+                        self.lineation_settings.markersize + 2
+                    )
+                elif typ == "P":
+                    obj.set_markersize(
+                        self.pole_settings.markersize + 2
+                    )
+                elif typ == "S":
+                    obj.set_linewidth(
+                        self.plane_settings.linewidth + 2
+                    )
+
+                self.canvas.draw_idle()
+                return
+
 
     def on_pick(self, event):
-        self.reset_highlight()
-        artist = event.artist
-        
-        for obj, typ, label in self.plots:
-            if obj == artist:
-                # Zvýrazni
-                if typ == "L":
-                    obj.set_marker('o')
-                    obj.set_color('r')
-                    obj.set_markersize(8)
-                elif typ == "S":
-                    obj.set_color('r')
-                    obj.set_linewidth(3)
-
-                self.highlight = (obj, typ, label)
-
-                # Zobraz popis
-                self.annot = self.ax.annotate(label,
-                                              xy=(0, 0), xycoords='axes fraction',
-                                              xytext=(0, 0), textcoords='offset points',
-                                              ha='left', va='top',
-                                              fontsize=8, color='black',
-                                              bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='black'))
-                break
-
-        self.canvas.draw_idle()
+        for obj, typ, index in self.plots:
+            if obj is event.artist:
+                self.highlight_record(index)
+                return
 
 
 if __name__ == "__main__":

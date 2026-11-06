@@ -21,8 +21,13 @@ class DataPanel(tk.Frame):
         table_frame.rowconfigure(0, weight=1)
 
         # Treeview
-        self.tree = ttk.Treeview(table_frame, columns=columns,
-                                 show="headings")
+        self.tree = ttk.Treeview(
+            table_frame,
+            columns=columns,
+            show="headings",
+            selectmode="browse"
+        )
+        self.tree.bind("<<TreeviewSelect>>", self.on_select)
 
         # Scrollbary
         self.scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
@@ -65,10 +70,11 @@ class DataPanel(tk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-        for row in data:
+        for index, row in enumerate(data):
             self.tree.insert(
                 "",
                 "end",
+                iid=str(index),
                 values=(
                     row["id"],
                     row["type"],
@@ -77,6 +83,23 @@ class DataPanel(tk.Frame):
                     row["comment"]
                 )
             )
+    # funkcia zistí kotý riadok sme vybrali, uloží jeho ID a prevedie na číslo
+    # odvzda ho metode dataset_selected v hlavnom programe
+    def on_select(self, event=None):
+        selected = self.tree.selection()
+
+        if not selected:
+            return
+
+        index = int(selected[0])
+        self.app.dataset_selected(index)
+
+    # podla indexu riadka ho vyznači
+    def select_row(self, index):
+        row_id = str(index)
+
+        if self.tree.exists(row_id):
+            self.tree.selection_set(row_id)
 
 
 class PlotPanel(tk.Frame):
@@ -98,16 +121,20 @@ class PlotPanel(tk.Frame):
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
         self.projection = None
+        self.current_mode = None
+        self.canvas.mpl_connect("pick_event", self.on_pick)
         self.canvas.draw()
 
 
     def redraw(self, data, mode="all"):
+        self.current_mode = mode
         if self.projection is None:
             self.projection = StereonetProjection(
                 self.ax, 
                 self.canvas, 
                 data, 
                 self.app.lineation_settings,
+                self.app.pole_settings,
                 self.app.plane_settings,
                 self.app.contour_settings
                 )
@@ -115,6 +142,7 @@ class PlotPanel(tk.Frame):
             self.projection.data = data
             self.projection.plots.clear()
             self.projection.lineation_settings = self.app.lineation_settings
+            self.projection.pole_settings = self.app.pole_settings
             self.projection.plane_settings = self.app.plane_settings
             self.projection.contour_settings = self.app.contour_settings
 
@@ -131,6 +159,10 @@ class PlotPanel(tk.Frame):
 
     
     def clear(self):
+        self.current_mode = None
+        if self.projection is not None:
+            self.projection.plots.clear()
+            self.projection.highlight = None
         self.ax.cla()
         self.ax.grid(False)
         self._setup_axes()
@@ -151,4 +183,15 @@ class PlotPanel(tk.Frame):
 
 
     def highlight(self, index):
-        pass
+        if self.projection is not None:
+            self.projection.highlight_record(index)
+
+    # Táto metóda nájde kliknutý objekt a zavolá označenie príslušného riadka
+    def on_pick(self, event):
+        if self.projection is None:
+            return
+
+        for obj, typ, index in self.projection.plots:
+            if obj is event.artist:
+                self.app.data_panel.select_row(index)
+                return

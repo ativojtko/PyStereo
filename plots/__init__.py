@@ -3,3 +3,4 @@ from .lineation import LineationSettings
 from .plane import PlanePlot
 from .plane import PlaneSettings
 from .contour import ContourPlot
+from .pole import PolePlot, PoleSettings
