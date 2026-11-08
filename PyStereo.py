@@ -15,7 +15,7 @@ import calculations
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
 
-__VERSION__ = "0.23.0"
+__VERSION__ = "0.23.1"
 __AUTHOR__ = ("Hana Balažovjechová", \
               "Rastislav Vojtko", \
               "Miroslav Zverka", \
@@ -24,7 +24,7 @@ __AUTHOR__ = ("Hana Balažovjechová", \
 
 __LOCATION__ = "https://github.com/ativojtko/PyStereo"
 
-__DATE__ = '2026-11-06'
+__DATE__ = '2026-11-08'
 
 __LICENSE__ = """MIT License
 
@@ -48,8 +48,7 @@ hana.balazovjechova@gmail.com
 rastislav.vojtko@gmail.com
 """
 
-
-class StereoApp:
+class PyStereoApp:
     def __init__(self, root):
         self.root = root
         self.root.title(f"PyStereo {__VERSION__}")
@@ -410,5 +409,5 @@ class StereoApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = StereoApp(root)
+    app = PyStereoApp(root)
     root.mainloop()
