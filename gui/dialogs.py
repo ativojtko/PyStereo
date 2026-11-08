@@ -1,16 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-# zmena: pirdali sme dalsie parametre settings, title, a mode
+
 class LineationSettingsDialog(tk.Toplevel):
     def __init__(self, parent, app, settings=None, title="Lineation Settings"):
         super().__init__(parent)
 
         self.app = app
-        # ak sme dialogu odovzdalib nastavenia, tak ich použije, inak pracuje s lineation settings
+        # Use provided settings if available, otherwise use app's default lineation settings
         self.settings = settings if settings is not None else app.lineation_settings 
         self.title(title)
-        self.geometry("400x400")
         self.resizable(False, False)
 
         self.transient(parent)
@@ -27,6 +26,15 @@ class LineationSettingsDialog(tk.Toplevel):
 
         self._build_ui()
 
+        self.withdraw()  # Skryje okno, aby neprebliklo na nesprávnom mieste
+        self.update_idletasks()
+        self.geometry("+200+100")
+        self.deiconify()  # Znova okno zobrazí už na správnej pozícii
+
+        # Handle window close event (clicking the X button)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        
+
     def _build_ui(self):
         main_frame = ttk.Frame(self, padding=15)
         main_frame.pack(fill="both", expand=True)
@@ -39,7 +47,7 @@ class LineationSettingsDialog(tk.Toplevel):
         ttk.Combobox(
             app_frame,
             textvariable=self.marker_var,
-            values=["o", "^", "s", "x", "d"],
+            values=["o", "^", "v", "s", "x", "d", "p", "*", "+", "h"],
             width=15,
             state="readonly"
         ).grid(row=0, column=1, sticky="ew", pady=5)
@@ -181,7 +189,6 @@ class PlaneSettingsDialog(tk.Toplevel):
 
         self.app = app
         self.title("Plane Settings")
-        self.geometry("400x320")
         self.resizable(False, False)
 
         self.transient(parent)
@@ -196,6 +203,14 @@ class PlaneSettingsDialog(tk.Toplevel):
         self.segments_var = tk.IntVar(value=settings.segments)
 
         self._build_ui()
+
+        self.withdraw()  # Skryje okno, aby neprebliklo na nesprávnom mieste
+        self.update_idletasks()
+        self.geometry("+200+100")
+        self.deiconify()  # Znova okno zobrazí už na správnej pozícii
+
+        # Handle window close event (clicking the X button)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
 
     def _build_ui(self):
         main_frame = ttk.Frame(self, padding=15)
@@ -344,7 +359,6 @@ class ContourSettingsDialog(tk.Toplevel):
 
         self.app = app
         self.title("Contour Settings")
-        self.geometry("400x480")
         self.resizable(False, False)
 
         self.transient(parent)
@@ -379,6 +393,14 @@ class ContourSettingsDialog(tk.Toplevel):
         self._build_ui()
         self._update_sigma_state()
         self._update_levels_mode()
+
+        self.withdraw()  # Skryje okno, aby neprebliklo na nesprávnom mieste
+        self.update_idletasks()
+        self.geometry("+200+100")
+        self.deiconify()  # Znova okno zobrazí už na správnej pozícii
+
+        # Handle window close event (clicking the X button)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
 
     def _method_label(self, method):
         for label, value in self.DENSITY_METHODS.items():
@@ -666,7 +688,7 @@ class RotationDialog(tk.Toplevel):
 
         self.app = app
         self.title(title)
-        self.geometry("360x320")
+        # self.geometry("360x320")
         self.resizable(False, False)
 
         self.transient(parent)
@@ -679,8 +701,13 @@ class RotationDialog(tk.Toplevel):
         self.decimal_places_var = tk.IntVar(value=2)
 
         self._build_ui()
+
+        self.withdraw()  # Skryje okno, aby neprebliklo na nesprávnom mieste
+        self.update_idletasks()
+        self.geometry("+200+100")
+        self.deiconify()  # Znova okno zobrazí už na správnej pozícii
         
-        # Ošetrenie zatvorenia okna cez krížik (X)
+        # Handle window close event (clicking the X button)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
 
     def _build_ui(self):
