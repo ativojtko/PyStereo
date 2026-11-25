@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pystereo"
+dynamic = ["version"]
+description = "Stereonet plotting tool for structural geology"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+authors = [
+    { name = "Hana Balažovjechová" },
+    { name = "Rastislav Vojtko" },
+    { name = "Miroslav Zverka" },
+    { name = "Marcel Vasiľák" },
+]
+maintainers = [
+    { name = "Rastislav Vojtko", email = "rastislav.vojtko@gmail.com" },
+    { name = "Hana Balažovjechová", email = "balazoviechovah@gmail.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "mplstereonet",
+]
+
+[project.gui-scripts]
+pystereo = "pystereo.__main__:main"
+
+[project.urls]
+Repository = "https://github.com/ativojtko/PyStereo"
+
+[tool.setuptools.dynamic]
+version = { attr = "pystereo.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["pystereo*"]
+
+[tool.setuptools.package-data]
+pystereo = ["assets/*"]

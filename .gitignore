@@ -1,0 +1,21 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Balenie a inštalácia
+*.egg-info/
+build/
+dist/
+
+# Vývojové prostredia a IDE
+.vscode/
+.idea/
+venv/
+
+# Systémové súbory
+.DS_Store
+Thumbs.db
+
+# Logy
+log.txt
