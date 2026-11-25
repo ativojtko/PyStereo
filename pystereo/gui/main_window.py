@@ -6,7 +6,7 @@ from ..plots.lineation import LineationSettings
 from ..plots.pole import PoleSettings
 from ..plots.plane import PlaneSettings
 from ..plots.contour import ContourSettings
-from ..core.projection import StereonetProjection
+from ..plots.projection import StereonetProjection
 from .dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSettingsDialog, RotationDialog
 from .panels import DataPanel, PlotPanel
 from ..file_io import write_data, read_data, write_plot
@@ -20,12 +20,11 @@ ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
 __AUTHOR__ = ("Hana Balažovjechová", \
               "Rastislav Vojtko", \
               "Miroslav Zverka", \
-              "Marcel Vasiľák", \
-              "Zuzana Lahová")
+              "Marcel Vasiľák")
 
 __LOCATION__ = "https://github.com/ativojtko/PyStereo"
 
-__DATE__ = '2026-11-08'
+__DATE__ = '2026-11-25'
 
 __LICENSE__ = """MIT License
 
@@ -313,7 +312,7 @@ class PyStereoApp:
             return
 
         caption = (
-            f"PyStereo {__VERSION__}\n"
+            f"PyStereo {__version__}\n"
             f"{self.current_file}\n"
             f"n = {len(self.data)}\n"
         )

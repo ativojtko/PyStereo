@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import mplstereonet
-from ..plots import LineationPlot, PlanePlot, PolePlot, ContourPlot
+from .lineation import LineationPlot
+from .plane import PlanePlot
+from .pole import PolePlot
+from .contour import ContourPlot
 
 class StereonetProjection:
     def __init__(self, ax, canvas, data, lineation_settings, pole_settings, plane_settings, contour_settings):
