@@ -1,0 +1,39 @@
+================================================================================
+                 ŠTATISTICKÝ MODUL: FISHER ANALYSIS v.01.03                     
+================================================================================
+Spustené z interpretora: C:\Python\Python311\python.exe
+Vstupné argumenty (sys.argv): ['C:/Users/RVOJTKO/Dropbox/devel/Stereonet/Stereo-0.19.0_01/Stereo-0.19.0_01/statistics/Fisher_analysis_v01_03.py', 'C:/Users/RVOJTKO/Dropbox/devel/Stereo/PyStereo/examples/Lineations.tsv']
+
+Cieľový súbor na spracovanie:
+-> C:/Users/RVOJTKO/Dropbox/devel/Stereo/PyStereo/examples/Lineations.tsv
+
+Štartujem čítanie dát...
+Úspešne načítaných 86 meraní pre: Linácie (L)
+Dáta úspešne načítané. Spúšťam Fisherovu štatistiku...
+
+======================= Výpočtový REPORT Fisher Analýzy ========================
+Fisher_analysis_v01_03.py | Linácie (L)
+Počet meraní (n):                                  86
+Dĺžka výsledného vektora R (Resultant Vector):     29.5358
+Stredný vektor (Mean Vector):                      0.3434
+Výsledný Azimut/TREND:                             86.9°
+Výsledný Sklon/PLUNGE:                             43.8°
+--------------------------------------------------------------------------------
+SÚRADNICE VÝSLEDNÉHO VEKTORA (R): Σx = 1.1398, Σy = 21.2905, Σz = 20.4396
+ZNORMALIZOVANÉ SÚRADNICE (Dĺžka = 1): x = 0.0386, y = 0.7208, z = 0.6920
+--------------------------------------------------------------------------------
+Cirkulárna variancia Cirkular variance S₀ = 1 - (R/n) :             0.6566
+Parameter koncentrácie κ; Kappa = (n-1)/(n-R):                      1.51
+Parameter koncentrácie κ2; Kappa2 = (n-2)/(n-R):                    1.49
+Predbežný odhad κ (n < 30) kappa_est = (n-1)^ 3/ R(n-R):            368.24
+κ podľa Fisher et al. 1987 (Štandardný odhad pre N=86 (>=16)):  368.24
+Parameter koncentrácie κ50 pre (n>50) Kappa50 = (n)/(n-R):          1.52
+Uhol spoľahlivosti α95:                                             21.34°
+Uhol α95 (približný odhad platný iba pre n>10) α95 = 140/(k*n)^0.5: 12.30°
+Mean Cone Angle (MCA) MCA = arccos(R/n):                            69.91°
+Kruhová odchýlka Spherical Aperture theta θ = 81/(kappa)^0,5:       66.02°
+Uhol spoľahlivosti α99 
+      α99 = arccos(1 - ((n-R)/R).[(1/0,01)^(1/(n-1)) - 1]):         26.67°
+================================================================================
+================================================================================
+
