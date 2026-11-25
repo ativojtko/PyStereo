@@ -44,7 +44,7 @@ Slovakia"""
 
 __EMAIL__ = """
 e-mails:
-hana.balazovjechova@gmail.com
+balazovjechovah@gmail.com
 rastislav.vojtko@gmail.com
 """
 
