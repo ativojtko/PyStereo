@@ -2,20 +2,21 @@ import sys
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from plots.lineation import LineationSettings
-from plots.pole import PoleSettings
-from plots.plane import PlaneSettings
-from plots.contour import ContourSettings
-from projection import StereonetProjection
-from gui.dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSettingsDialog, RotationDialog
-from gui.panels import DataPanel, PlotPanel
-from file_io import write_data, read_data, write_plot
-import calculations
+from ..plots.lineation import LineationSettings
+from ..plots.pole import PoleSettings
+from ..plots.plane import PlaneSettings
+from ..plots.contour import ContourSettings
+from ..core.projection import StereonetProjection
+from .dialogs import LineationSettingsDialog, PlaneSettingsDialog, ContourSettingsDialog, RotationDialog
+from .panels import DataPanel, PlotPanel
+from ..file_io import write_data, read_data, write_plot
+from ..core import calculations
+from .. import __version__
 
-ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
 
 
-__VERSION__ = "0.23.1"
+#__VERSION__ = "0.23.1"
 __AUTHOR__ = ("Hana Balažovjechová", \
               "Rastislav Vojtko", \
               "Miroslav Zverka", \
@@ -51,7 +52,7 @@ rastislav.vojtko@gmail.com
 class PyStereoApp:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"PyStereo {__VERSION__}")
+        self.root.title(f"PyStereo {__version__}")
         self.root.geometry("1000x600+100+100")
 
         # Nastavenie ikony aplikáce (Windows vs. ostatné platformy)
@@ -170,7 +171,7 @@ class PyStereoApp:
         help_menu.add_command(label="About...",
                                       command=lambda: messagebox.showinfo(
                                           "About PyStereo...",
-                                          "PyStereo " + __VERSION__ + "\n" + __LOCATION__ + "\nBuild: " 
+                                          "PyStereo " + __version__ + "\n" + __LOCATION__ + "\nBuild: " 
                                           + __DATE__ + "\n\n" + "\n".join(__AUTHOR__) + "\n\n" 
                                           + __ADDRESS__ + "\n\n" + __EMAIL__
                                       ))
@@ -406,8 +407,3 @@ class PyStereoApp:
     def open_contour_settings(self):
         ContourSettingsDialog(self.root, self)
 
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = PyStereoApp(root)
-    root.mainloop()

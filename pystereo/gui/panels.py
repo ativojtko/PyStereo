@@ -3,7 +3,7 @@ from tkinter import ttk
 import tkinter.font as tkfont
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
-from projection import StereonetProjection
+from ..core.projection import StereonetProjection
 
 
 class DataPanel(tk.Frame):
